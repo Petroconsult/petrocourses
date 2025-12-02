@@ -1,0 +1,12 @@
+{
+  "name": "petrocourses-workspace",
+  "version": "1.0.0",
+  "description": "Petrocourses - Multi-vertical training, advisory, and consultancy platform",
+  "private": true,
+  "workspaces": [
+    "petrocourses"
+  ],
+  "dependencies": {
+    "@clerk/nextjs": "^6.35.5"
+  }
+}
