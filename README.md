@@ -1,332 +1,169 @@
-PetroCourses – Full-Stack Training & Consultancy Platform
+# PetroCourses – Full-Stack Training & Consultancy Platform
 
-A scalable, domain-driven platform built with Next.js App Router, Prisma, and modular service architecture. PetroCourses provides training programs, consultancy services, advisory sessions, and a personalized user dashboard. The system integrates a unified payments layer and supports modern content delivery via Sanity CMS.
+PetroCourses is a scalable, domain-driven full-stack platform built with **Next.js App Router**, **Prisma**, and a **modular service architecture**.
 
-Table of Contents
+The platform delivers professional **training programs**, **consultancy services**, **advisory sessions**, and a **personalized user dashboard**, supported by a **unified payments layer** and modern content delivery via **Sanity CMS**.
 
-Introduction
+---
 
-Technology Stack
+## Table of Contents
 
-Features
+1. Introduction  
+2. Platform Capabilities  
+3. Technology Stack  
+4. Features  
+5. Project Architecture  
+6. Directory Structure  
+7. Authentication  
+8. Payments  
+9. Database  
+10. CMS Integration  
+11. Development Workflow  
+12. Environment Variables  
+13. Scripts  
+14. Setup Instructions  
+15. Deployment  
+16. Contributing  
+17. License  
 
-Project Architecture
+---
 
-Directory Overview
+## Introduction
 
-Authentication
+PetroCourses is a production-grade web platform designed for **online education, consultancy, and advisory services**.
 
-Payments
+It is built to support:
 
-Database
+- High-traffic public marketing pages  
+- Modular course and service catalogs  
+- Secure booking and payment flows  
+- Authenticated dashboards for users  
+- Clean separation of business logic and infrastructure  
 
-CMS Integration
+The system is optimized for **scalability**, **maintainability**, and **easy integration** with external services such as CRMs, payment providers, and learning platforms.
 
-Setup Instructions
-
-Development Workflow
-
-Environment Variables
-
-Scripts
-
-Deployment
-
-Contributing
-
-License
-
-1. Introduction
-
-PetroCourses is a full-stack web platform designed for online training, consultancy, and advisory services. The system is optimized for scalability, domain-driven structure, and ease of integration with external services such as CRMs, payment gateways, and LMS pipelines.
-
-The platform supports marketing pages, course catalog, booking flows, a user dashboard, and API endpoints that power the frontend.
-
-2. Technology Stack
-
-Frontend & Backend
-
-Next.js 14+ (App Router)
-
-React
-
-TypeScript
-
-Database & ORM
-
-PostgreSQL
-
-Prisma ORM
-
-Authentication
-
-Clerk (with passwordless, OAuth, and server-side session support)
-
-Payments
-
-UniPay Connect (unified gateway for Stripe, Razorpay, PayPal, etc.)
-
-CMS & Integrations
-
-Sanity CMS
-
-HubSpot
-
-Calendly
-
-Teachable (optional)
-
-Styling & Components
-
-Tailwind CSS
-
-shadcn/ui
-
-3. Features
-
-Public marketing pages
-
-Course catalog and enrollment
-
-Consultancy and advisory booking
-
-Insights and articles
-
-Resource downloads
-
-Authenticated user dashboard
-
-Server Actions for backend operations
-
-Domain-driven modules
-
-Unified payment API with webhooks
-
-Integrated CMS for content management
-
-CRM and scheduling integrations
-
-4. Project Architecture
-
-PetroCourses uses a domain-driven modular architecture that separates concerns between routing, domain logic, integrations, and UI components.
-
-Key architectural principles:
-
-Each domain (Training, Consultancy, Advisory, Payments) has its own module.
-
-API routes act as thin controllers and delegate real logic to services.
-
-Server Actions handle authenticated mutations.
-
-A unified integration layer manages payment providers and external APIs.
-
-Middleware protects authenticated routes (dashboard).
-
-Prisma handles database access through domain-specific query files.
-
-5. Directory Overview
-src/
- ├── app/                    # Next.js App Router (public + dashboard + APIs)
- ├── modules/                # Domain-driven application logic
- ├── server/                 # Server actions for mutations
- ├── integrations/           # Third-party SDK wrappers
- ├── components/             # UI and shared components
- ├── lib/                    # Utils, db, helpers, security
- ├── types/                  # Global TypeScript types
- └── middleware.ts           # Auth routing middleware
-
-prisma/                      # Database schema and migrations
-public/                      # Static assets
-sanity/                      # CMS configuration
-
-6. Authentication
-
-Authentication is implemented using Clerk.
-
-Key points:
-
-The root layout wraps the application in ClerkProvider.
-
-Middleware protects private routes such as /dashboard/*.
-
-currentUser() is used inside server actions and services to ensure secure access.
-
-Optional Clerk webhooks can sync user profiles into the database.
-
-7. Payments
-
-PetroCourses uses a unified payments domain located in:
-
-src/modules/payments/
-
-
-This includes:
-
-Payment services (business logic)
-
-Validation
-
-Server actions
-
-Payment type definitions
-
-All payment processing is routed through UniPay Connect, which allows the platform to support multiple providers (Stripe, Razorpay, PayPal) without modifying frontend or business logic.
-
-Webhook handlers are located under:
-
-src/app/api/webhooks/unipay/
-
-
-Metadata passed through payments ties transactions to authenticated users in the database.
-
-8. Database
-
-Prisma is used as the ORM with a PostgreSQL backend.
-
-Folder structure:
-
-prisma/
- ├── schema.prisma
- ├── migrations/
- └── seed.ts
-
-
-Models include:
-
-User
-
-Course
-
-Enrollment
-
-Booking
-
-Payment
-
-Additional domain-specific entities
-
-9. CMS Integration
-
-Sanity powers the content for:
-
-Insights (blog)
-
-Marketing pages
-
-Resource downloads
-
-Sanity configuration is stored in:
-
-sanity/
- ├── schemas/
- └── sanity.config.ts
-
-10. Setup Instructions
-Prerequisites
-
-Node.js 18+
-
-PostgreSQL database
-
-Sanity project (optional)
-
-Clerk account
-
-UniPay Connect API key
-
-Installation
-npm install
-
-Database Setup
-npx prisma migrate dev
-npx prisma db seed
-
-Environment File
-
-Create .env.local and configure the required variables (listed below).
-
-Run the Development Server
-npm run dev
-
-
-The application will be available at http://localhost:3000.
-
-11. Development Workflow
-
-Modules contain all domain logic.
-
-UI components live in src/components/.
-
-Server Actions handle authenticated operations.
-
-API routes act as the controller layer.
-
-Prisma is used for all database operations via domain query files.
-
-Integrations folder holds all external API clients.
-
-This separation ensures scalability and maintainability.
-
-12. Environment Variables
-
-Typical values include:
-
-DATABASE_URL=
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
-CLERK_SECRET_KEY=
-UNIPAY_API_KEY=
-
-SANITY_PROJECT_ID=
-SANITY_TOKEN=
-
-HUBSPOT_API_KEY=
-CALENDLY_API_KEY=
-TEACHABLE_API_KEY=
-
-
-Add additional integration keys as needed.
-
-13. Scripts
-npm run dev         # Start development server
-npm run build       # Create production build
-npm run start       # Run production build
-npm run lint        # Lint code
-npm run format      # Format using Prettier
-npx prisma studio   # Database admin UI
-
-14. Deployment
-
-PetroCourses is optimized for deployment on:
-
-Vercel
-
-AWS (via Next.js SSR support)
-
-Render
-
-Docker-based hosting
-
-For Vercel:
-
-Environment variables must be configured in project settings.
-
-The platform will automatically detect Next.js App Router.
-
-15. Contributing
-
-Contributions should follow these guidelines:
-
-Create a feature branch before submitting PRs.
-
-Follow the existing domain-driven structure.
-
-Ensure TypeScript types are correctly extended.
-
-Add tests or validation for new modules.
-
-Follow formatting and linting rules.
-
-16. License
-
-This project is licensed under the MIT License.
-You may modify and distribute this software in compliance with the license terms.
+---
+
+## Platform Capabilities
+
+PetroCourses supports multiple business verticals from a single codebase:
+
+- **Training** – courses, enrollments, learning journeys  
+- **Consultancy** – service listings and booking workflows  
+- **Advisory** – expert advisory sessions  
+- **Content** – insights, resources, and CMS-driven pages  
+- **Payments** – unified checkout and webhook handling  
+- **User Management** – authentication, profiles, bookings  
+
+---
+
+## Technology Stack
+
+### Frontend & Backend
+- Next.js 14+ (App Router)
+- React
+- TypeScript
+
+### Database & ORM
+- PostgreSQL
+- Prisma ORM
+
+### Authentication
+- Clerk (passwordless login, OAuth, server-side sessions)
+
+### Payments
+- UniPay Connect  
+  - Stripe  
+  - Razorpay  
+  - PayPal  
+
+### CMS & Integrations
+- Sanity CMS
+- HubSpot
+- Calendly
+- Teachable (optional)
+
+### Styling & UI
+- Tailwind CSS
+- shadcn/ui
+
+---
+
+## Features
+
+- Public marketing pages  
+- Course catalog and enrollment flows  
+- Consultancy and advisory booking  
+- CMS-driven insights and resources  
+- Authenticated user dashboard  
+- Server Actions for secure mutations  
+- Domain-driven modular architecture  
+- Unified payments with webhook handling  
+- CRM and scheduling integrations  
+
+---
+
+## Project Architecture
+
+PetroCourses follows a **domain-driven, modular architecture** built on top of the **Next.js App Router**.
+
+### Core Architectural Principles
+
+- **Routing is not business logic**  
+- **API routes are thin controllers**  
+- **All domain logic lives in modules**  
+- **Server Actions handle authenticated mutations**  
+- **Third-party services are isolated behind adapters**  
+- **Payments are unified behind a single gateway**  
+- **Middleware enforces access control**  
+
+### Responsibility Separation
+
+| Layer | Responsibility |
+|-----|---------------|
+| `app/` | Routing, layouts, and API endpoints |
+| `modules/` | Domain rules and business logic |
+| `server/` | Server Actions |
+| `integrations/` | External APIs & SDKs |
+| `lib/` | Shared utilities and infrastructure |
+| `prisma/` | Database schema and access |
+
+---
+
+## Directory Structure
+
+```text
+my-platform/
+├── src/
+│   ├── app/                              # Next.js App Router
+│   │   ├── (marketing)/                  # Public pages
+│   │   ├── training/                     # Training vertical
+│   │   ├── consultancy/
+│   │   ├── advisory/
+│   │   ├── insights/
+│   │   ├── resources/
+│   │   ├── dashboard/                    # Auth-protected area
+│   │   ├── api/                          # Thin API controllers
+│   │   ├── layout.tsx
+│   │   └── globals.css
+│   │
+│   ├── modules/                          # Domain-driven logic
+│   │   ├── training/
+│   │   ├── consultancy/
+│   │   ├── advisory/
+│   │   └── payments/
+│   │
+│   ├── server/                           # Server Actions
+│   ├── integrations/                     # External services
+│   ├── components/                       # UI components
+│   ├── lib/                              # Utilities & security
+│   ├── types/                            # Global TS types
+│   └── middleware.ts                     # Auth & routing guard
+│
+├── prisma/                               # Database
+├── public/                               # Static assets
+├── sanity/                               # CMS config
+├── .env.local
+├── next.config.js
+├── tailwind.config.ts
+└── package.json
