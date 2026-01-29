@@ -60,72 +60,134 @@ PetroCourses supports multiple business verticals from a single codebase:
 ## Technology Stack
 
 ### Frontend & Backend
-- Next.js 14+ (App Router)
-- React
-- TypeScript
-
-### Database & ORM
-- PostgreSQL
-- Prisma ORM
-
-### Authentication
-- Clerk (passwordless login, OAuth, server-side sessions)
-
-### Payments
-- UniPay Connect  
-  - Stripe  
-  - Razorpay  
-  - PayPal  
-
-### CMS & Integrations
-- Sanity CMS
-- HubSpot
-- Calendly
-- Teachable (optional)
-
-### Styling & UI
-- Tailwind CSS
-- shadcn/ui
-
----
-
-## Features
-
-- Public marketing pages  
-- Course catalog and enrollment flows  
-- Consultancy and advisory booking  
-- CMS-driven insights and resources  
-- Authenticated user dashboard  
-- Server Actions for secure mutations  
-- Domain-driven modular architecture  
-- Unified payments with webhook handling  
-- CRM and scheduling integrations  
-
----
-
 ## Project Architecture
 
-PetroCourses follows a **domain-driven, modular architecture** built on top of the **Next.js App Router**.
+PetroCourses follows a domain-driven, modular architecture layered on the Next.js App Router.
 
-### Core Architectural Principles
+High-level principles:
+- Keep routing and presentation in `app/` (no business logic).
+- Place authoritative business rules and persistence in `src/domains/`.
+- Use thin orchestration/orchestrators for cross-domain workflows in `src/orchestrators/`.
+- Expose authenticated mutations via `src/server/` Server Actions.
+- Isolate third-party integrations in `src/integrations/` and adapters in `src/lib/`.
+- Use `middleware.ts` for access control and role-based guards.
 
-- **Routing is not business logic**  
-- **API routes are thin controllers**  
-- **All domain logic lives in modules**  
-- **Server Actions handle authenticated mutations**  
-- **Third-party services are isolated behind adapters**  
-- **Payments are unified behind a single gateway**  
-- **Middleware enforces access control**  
+---
 
-### Responsibility Separation
+## Directory Structure
 
-| Layer | Responsibility |
-|-----|---------------|
-| `app/` | Routing, layouts, and API endpoints |
-| `modules/` | Domain rules and business logic |
-| `server/` | Server Actions |
-| `integrations/` | External APIs & SDKs |
-| `lib/` | Shared utilities and infrastructure |
+```text
+PetroCourses/
+├── prisma/
+│   ├── schema.prisma
+│   ├── seed.ts
+│   └── migrations/
+│
+├── sanity/
+│   ├── sanity.config.ts
+│   └── schemas/                       # Content only (no certification logic)
+│
+├── src/
+│   ├── middleware.ts                  # Auth + access guards
+│   
+│   ├── app/                           # Routing & UI only
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   ├── page.tsx
+│   │   
+│   │   ├── (marketing)/               # Marketing & public pages
+│   │   │   ├── about/
+│   │   │   ├── contact/
+│   │   │   └── insights/
+│   │   
+│   │   ├── pathways/                  # Public pathway → level views
+│   │   │   ├── page.tsx
+│   │   │   └── [pathwayId]/
+│   │   │       └── levels/
+│   │   
+│   │   ├── dashboard/                 # Authenticated experience
+│   │   │   ├── layout.tsx
+│   │   │   ├── pathways/
+│   │   │   ├── certificates/
+│   │   │   ├── bookings/
+│   │   │   └── profile/
+│   │   
+│   │   ├── advisory/
+│   │   ├── consultancy/
+│   │   
+│   │   └── api/                       # Thin orchestration endpoints
+│   │       ├── auth/
+│   │       ├── payments/
+│   │       ├── enrollment/
+│   │       ├── certification/
+│   │       └── webhooks/
+│   
+│   ├── domains/                       # 🔒 Business Truth Lives Here
+│   │
+│   │   ├── certification/             # ⭐ CORE AUTHORITY
+│   │   │   ├── certification.engine.ts
+│   │   │   ├── certification.policy.ts
+│   │   │   ├── certificate.model.ts
+│   │   │   ├── certificate.repo.ts
+│   │   │   └── events.ts
+│   │
+│   │   ├── training/                  # Content structure only
+│   │   │   ├── pathway.model.ts
+│   │   │   ├── level.model.ts
+│   │   │   ├── module.model.ts
+│   │   │   ├── lesson.model.ts
+│   │   │   └── progress.events.ts
+│   │
+│   │   ├── enrollment/                # Access & lifecycle
+│   │   │   ├── enrollment.model.ts
+│   │   │   ├── enrollment.lifecycle.ts
+│   │   │   ├── access.control.ts
+│   │   │   └── enrollment.repo.ts
+│   │
+│   │   ├── payments/
+│   │   │   ├── product.catalog.ts      # Level / Pathway / Corporate
+│   │   │   ├── entitlements.ts
+│   │   │   ├── payment.service.ts
+│   │   │   └── webhooks.ts
+│   │
+│   │   ├── identity/                  # User & org context
+│   │   │   ├── user.context.ts
+│   │   │   ├── roles.ts
+│   │   │   └── organization.model.ts
+│   │
+│   │   ├── corporate/                 # Phase 2 (dormant but ready)
+│   │   │   ├── organization.model.ts
+│   │   │   ├── seat.model.ts
+│   │   │   └── reporting.ts
+│   │
+│   │   ├── advisory/
+│   │   └── consultancy/
+│   
+│   ├── orchestrators/                 # 🔁 Cross-domain workflows
+│   │   ├── enrollment.orchestrator.ts
+│   │   ├── payment.orchestrator.ts
+│   │   └── certification.orchestrator.ts
+│   
+│   ├── server/                        # Server Actions
+│   │   ├── auth.actions.ts
+│   │   ├── enrollment.actions.ts
+│   │   ├── certification.actions.ts
+│   │   ├── booking.actions.ts
+│   │   └── payment.actions.ts
+│   
+│   ├── components/                    # UI only (no business logic)
+│   ├── hooks/
+│   ├── integrations/                  # Stripe, UniPay, Sanity, HubSpot
+│   ├── lib/                           # DB, security, utilities
+│   ├── types/                         # Shared types (DTOs only)
+│   
+├── tests/
+│   ├── unit/
+│   ├── integration/
+│   ├── e2e/
+│   └── fixtures/
+    
+```
 | `prisma/` | Database schema and access |
 
 ---

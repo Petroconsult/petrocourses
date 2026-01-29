@@ -44,7 +44,11 @@ model Course {
   category        Category
   subCategory     UpstreamSubCategory? //  NEW (nullable)
   duration        String         // e.g., "8 weeks", "3 months"
-  level           Level
+
+  // Transitional: courses may map to a sellable `Level`.
+  levelId         String?
+  level           Level?         @relation(fields: [levelId], references: [id], onDelete: SetNull)
+
   price           Decimal        @db.Decimal(10, 2)
   currency        String         @default("USD")
   thumbnail       String?
@@ -62,12 +66,12 @@ model Course {
   content         Json?          // Additional content data
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
-  
+
   enrollments     Enrollment[]
-  
+
   @@index([slug])
   @@index([category])
-  @@index([level])
+  @@index([levelId])
   @@index([featured])
   @@index([published])
 }
@@ -81,10 +85,71 @@ enum Category {
   TECHNICAL
 }
 
-enum Level {
-  BEGINNER
-  INTERMEDIATE
-  ADVANCED
+// New data models to represent credentialing domain
+
+model Pathway {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  title       String
+  description String?   @db.Text
+  // ordered levels
+  levels      Level[]
+  policyId    String?   // optional default policy for pathway
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Level {
+  id          String    @id @default(cuid())
+  pathwayId   String
+  title       String
+  description String?   @db.Text
+  order       Int       // enforces order within pathway
+  price       Decimal?  @db.Decimal(10,2)
+  currency    String    @default("USD")
+  sellable    Boolean   @default(true)
+  // optional legacy mapping to an existing Course
+  legacyCourseId String?
+  legacyCourse   Course? @relation(fields: [legacyCourseId], references: [id], onDelete: SetNull)
+  enrollments Enrollment[]
+  certificates Certificate[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  pathway     Pathway   @relation(fields: [pathwayId], references: [id], onDelete: Cascade)
+  @@index([pathwayId, order])
+}
+
+model CertificationPolicy {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  rules       Json     // policy rules encoded as JSON; deterministic evaluation
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Certificates are immutable legal artifacts. No updatedAt field.
+model Certificate {
+  id             String   @id @default(cuid())
+  serial         String   @unique
+  userId         String
+  pathwayId      String?
+  levelId        String?
+  enrollmentId   String?  // optional trace to the enrollment that led to issuance
+  policyId       String?  // which policy was used
+  issuerId       String?  // who issued
+  issuedAt       DateTime @default(now())
+  metadata       Json?    // signed payload, PDF links, hashes
+
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pathway        Pathway? @relation(fields: [pathwayId], references: [id], onDelete: SetNull)
+  level          Level?   @relation(fields: [levelId], references: [id], onDelete: SetNull)
+  enrollment     Enrollment? @relation(fields: [enrollmentId], references: [id], onDelete: SetNull)
+  policy         CertificationPolicy? @relation(fields: [policyId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([serial])
 }
 
 enum DeliveryMode {
@@ -97,7 +162,10 @@ enum DeliveryMode {
 model Enrollment {
   id              String           @id @default(cuid())
   userId          String
-  courseId        String
+  // Transitional: keep `courseId` for backward compatibility.
+  courseId        String?
+  // New authoritative reference: enrollments are tied to a `Level` (sellable unit).
+  levelId         String?
   fullName        String
   email           String
   phone           String
@@ -110,12 +178,23 @@ model Enrollment {
   message         String?          @db.Text
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
+
+  // Lifecycle fields for enrollment as a first-class entity
+  lifecycleState  EnrollmentLifecycle @default(PENDING)
+  entitlementReason String?        // why access was granted (coupon, purchase, admin grant)
+  grantedBy       String?          // userId of the actor who granted access
+  grantedAt       DateTime?
+  expiresAt       DateTime?        // optional expiry for limited seats or access
+  revokedAt       DateTime?
+  revokedBy       String?
   
   user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  course          Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  course          Course?          @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  level           Level?           @relation(fields: [levelId], references: [id], onDelete: SetNull)
   
   @@index([userId])
   @@index([courseId])
+  @@index([levelId])
   @@index([status])
   @@index([email])
 }
@@ -126,6 +205,17 @@ enum EnrollmentStatus {
   REJECTED
   COMPLETED
   CANCELLED
+}
+
+enum EnrollmentLifecycle {
+  PENDING
+  APPROVED
+  ACTIVE
+  SUSPENDED
+  COMPLETED
+  CANCELLED
+  REVOKED
+  EXPIRED
 }
 
 enum PaymentStatus {

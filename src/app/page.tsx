@@ -124,98 +124,194 @@ export default function TrainingPage() {
         </div>
       </section>
 
-      {/* Training Categories */}
+      {/* Training Categories - REDESIGNED WITH ASYMMETRIC LAYOUT */}
       <section className="px-4 relative">
         {/* Background decoration */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-orange-500/5 rounded-full blur-3xl -z-10"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1200px] h-[1200px] bg-gradient-to-br from-orange-500/5 via-orange-600/3 to-transparent rounded-full blur-3xl -z-10"></div>
         
-        <div className="text-center mb-16 animate-fade-in-up">
+        <div className="text-center mb-20 animate-fade-in-up">
           <div className="inline-block px-4 py-1 bg-orange-500/10 rounded-full text-sm font-medium mb-4 text-orange-500 border border-orange-500/20">
             Specialized Training
           </div>
-          <h2 className="text-4xl md:text-5xl font-bold text-white">
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
             Training by Discipline
           </h2>
+          <p className="text-white/60 text-lg max-w-2xl mx-auto">
+            Explore our comprehensive range of specialized programs designed for every stage of the oil and gas value chain
+          </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
-          {[
-            { title: 'Upstream', desc: 'Exploration, drilling, and production operations', href: '/training/courses?category=upstream' },
-            { title: 'Midstream', desc: 'Pipeline operations and transportation', href: '/training/courses?category=midstream' },
-            { title: 'Downstream', desc: 'Refining, processing, and distribution', href: '/training/courses?category=downstream' },
-            { title: 'Safety & HSE', desc: 'Health, safety, and environmental management', href: '/training/courses?category=safety' },
-            { title: 'Management', desc: 'Project and operations management', href: '/training/courses?category=management' },
-            { title: 'Technical', desc: 'Advanced technical and engineering skills', href: '/training/courses?category=technical' },
-          ].map((category, index) => (
-            <Link key={category.title} href={category.href}>
-              <div 
-                className="group relative bg-gradient-to-br from-black to-orange-950/20 border border-orange-500/20 p-8 rounded-xl hover:border-orange-500/60 transition-all duration-500 h-full hover:shadow-2xl hover:shadow-orange-500/10 hover:-translate-y-2 animate-fade-in-up overflow-hidden"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                {/* Hover glow effect */}
-                <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-xl"></div>
+
+        {/* Asymmetric Grid Layout */}
+        <div className="max-w-7xl mx-auto">
+          {/* Top Row - Featured Large Cards */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            {/* Upstream - Large Featured Card */}
+            <Link href="/training/courses?category=upstream">
+              <div className="group relative bg-gradient-to-br from-orange-500/5 to-transparent border border-orange-500/20 p-12 rounded-2xl hover:border-orange-500/60 transition-all duration-500 h-full min-h-[280px] hover:shadow-2xl hover:shadow-orange-500/10 hover:-translate-y-2 animate-fade-in-up overflow-hidden">
+                {/* Decorative corner accent */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-orange-500/10 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 
-                {/* Shine effect on hover */}
-                <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-12"></div>
+                {/* Top accent bar */}
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 to-orange-600 rounded-t-2xl transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
+                
+                {/* Hover glow */}
+                <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl"></div>
                 
                 <div className="relative">
-                  <h3 className="text-2xl font-bold mb-3 text-white group-hover:text-orange-500 transition-colors duration-300">{category.title}</h3>
-                  <p className="text-white/70 leading-relaxed mb-4 group-hover:text-white/90 transition-colors duration-300">{category.desc}</p>
-                  <div className="inline-flex items-center text-orange-500 font-medium text-sm transition-all duration-300">
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="inline-block px-3 py-1 bg-orange-500/10 rounded-full text-xs font-medium text-orange-400 border border-orange-500/20">
+                      FEATURED
+                    </div>
+                    <div className="text-6xl font-bold text-orange-500/10 group-hover:text-orange-500/20 transition-all duration-500">01</div>
+                  </div>
+                  <h3 className="text-3xl font-bold mb-4 text-white group-hover:text-orange-500 transition-colors duration-300">Upstream</h3>
+                  <p className="text-white/70 leading-relaxed text-lg mb-6 group-hover:text-white/90 transition-colors duration-300">
+                    Master exploration, drilling, and production operations with comprehensive training in reservoir engineering, well design, and field development.
+                  </p>
+                  <div className="inline-flex items-center text-orange-500 font-semibold text-sm group-hover:gap-3 gap-2 transition-all duration-300">
                     Explore Programs
-                    <span className="transform group-hover:translate-x-2 transition-transform duration-300 ml-1">→</span>
+                    <span className="transform group-hover:translate-x-1 transition-transform duration-300">→</span>
                   </div>
                 </div>
               </div>
             </Link>
-          ))}
+
+            {/* Safety & HSE - Large Featured Card */}
+            <Link href="/training/courses?category=safety">
+              <div className="group relative bg-gradient-to-br from-orange-500/5 to-transparent border border-orange-500/20 p-12 rounded-2xl hover:border-orange-500/60 transition-all duration-500 h-full min-h-[280px] hover:shadow-2xl hover:shadow-orange-500/10 hover:-translate-y-2 animate-fade-in-up overflow-hidden" style={{ animationDelay: '100ms' }}>
+                {/* Decorative corner accent */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-orange-500/10 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                
+                {/* Top accent bar */}
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 to-orange-600 rounded-t-2xl transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
+                
+                {/* Hover glow */}
+                <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl"></div>
+                
+                <div className="relative">
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="inline-block px-3 py-1 bg-orange-500/10 rounded-full text-xs font-medium text-orange-400 border border-orange-500/20">
+                      FEATURED
+                    </div>
+                    <div className="text-6xl font-bold text-orange-500/10 group-hover:text-orange-500/20 transition-all duration-500">02</div>
+                  </div>
+                  <h3 className="text-3xl font-bold mb-4 text-white group-hover:text-orange-500 transition-colors duration-300">Safety & HSE</h3>
+                  <p className="text-white/70 leading-relaxed text-lg mb-6 group-hover:text-white/90 transition-colors duration-300">
+                    Build expertise in health, safety, and environmental management with industry-leading certifications and best practices.
+                  </p>
+                  <div className="inline-flex items-center text-orange-500 font-semibold text-sm group-hover:gap-3 gap-2 transition-all duration-300">
+                    Explore Programs
+                    <span className="transform group-hover:translate-x-1 transition-transform duration-300">→</span>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          </div>
+
+          {/* Bottom Row - Compact Cards in 4-column grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { 
+                title: 'Midstream', 
+                desc: 'Pipeline operations and transportation', 
+                href: '/training/courses?category=midstream',
+                number: '03'
+              },
+              { 
+                title: 'Downstream', 
+                desc: 'Refining, processing, and distribution', 
+                href: '/training/courses?category=downstream',
+                number: '04'
+              },
+              { 
+                title: 'Management', 
+                desc: 'Project and operations management', 
+                href: '/training/courses?category=management',
+                number: '05'
+              },
+              { 
+                title: 'Technical', 
+                desc: 'Advanced technical and engineering skills', 
+                href: '/training/courses?category=technical',
+                number: '06'
+              },
+            ].map((category, index) => (
+              <Link key={category.title} href={category.href}>
+                <div 
+                  className="group relative bg-gradient-to-br from-orange-500/5 to-transparent border border-orange-500/20 p-6 rounded-xl hover:border-orange-500/60 transition-all duration-500 h-full min-h-[200px] hover:shadow-2xl hover:shadow-orange-500/10 hover:-translate-y-2 animate-fade-in-up overflow-hidden"
+                  style={{ animationDelay: `${(index + 2) * 100}ms` }}
+                >
+                  {/* Top accent bar */}
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 to-orange-600 rounded-t-xl transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
+                  
+                  {/* Hover glow */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-xl"></div>
+                  
+                  <div className="relative h-full flex flex-col">
+                    <div className="text-4xl font-bold text-orange-500/10 group-hover:text-orange-500/20 mb-3 transition-all duration-500">{category.number}</div>
+                    <h3 className="text-xl font-bold mb-3 text-white group-hover:text-orange-500 transition-colors duration-300">{category.title}</h3>
+                    <p className="text-white/70 leading-relaxed text-sm mb-4 flex-grow group-hover:text-white/90 transition-colors duration-300">{category.desc}</p>
+                    <div className="inline-flex items-center text-orange-500 font-medium text-sm transition-all duration-300">
+                      Learn More
+                      <span className="transform group-hover:translate-x-1 transition-transform duration-300 ml-1">→</span>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* CTA Section */}
       <section className="px-4">
-        <div className="relative overflow-hidden bg-gradient-to-br from-black via-orange-950/10 to-black border border-orange-500/30 rounded-2xl max-w-7xl mx-auto shadow-2xl shadow-orange-500/5 animate-fade-in-up">
-          <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-transparent to-transparent"></div>
-          
-          {/* Animated background orbs */}
-          <div className="absolute top-0 right-0 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl animate-pulse-slow"></div>
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-orange-600/5 rounded-full blur-3xl animate-pulse-slow animation-delay-1000"></div>
-          
-          <div className="relative grid grid-cols-1 lg:grid-cols-2 gap-12 p-12 md:p-16">
-            <div className="animate-slide-in-left">
-              <div className="inline-block px-4 py-1 bg-orange-500/10 rounded-full text-sm font-medium mb-6 text-orange-500 border border-orange-500/20">
-                Start Your Journey
-              </div>
-              <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight">
-                Ready to Advance Your Career?
-              </h2>
-              <p className="text-white/70 mb-10 text-lg leading-relaxed">
-                Get in touch with our training advisors to find the perfect program for your career goals. We offer customized training solutions for individuals and corporate teams.
-              </p>
-              <div className="space-y-6">
-                {[
-                  { title: 'Personalized Learning Paths', desc: 'Tailored programs based on your experience and goals' },
-                  { title: 'Career Support', desc: 'Job placement assistance and career guidance' },
-                  { title: 'Lifetime Access', desc: 'Ongoing access to course materials and updates' },
-                ].map((item, index) => (
-                  <div 
-                    key={item.title} 
-                    className="flex items-start gap-4 group animate-slide-in-left hover:translate-x-2 transition-transform duration-300"
-                    style={{ animationDelay: `${(index + 1) * 150}ms` }}
-                  >
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-500 font-bold text-sm group-hover:bg-orange-500/20 group-hover:scale-110 transition-all duration-300">
-                      {index + 1}
+        <div className="max-w-7xl mx-auto">
+          <div className="relative overflow-hidden bg-gradient-to-br from-orange-600 via-orange-700 to-orange-900 rounded-[3rem] shadow-2xl shadow-orange-500/20 animate-fade-in-up">
+            {/* Diagonal overlay */}
+            <div className="absolute inset-0 bg-black/40"></div>
+            <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-bl from-black/60 to-transparent transform skew-x-12"></div>
+            
+            {/* Animated shapes */}
+            <div className="absolute top-10 right-10 w-32 h-32 border-2 border-white/20 rounded-full animate-spin-slow"></div>
+            <div className="absolute bottom-10 left-10 w-24 h-24 bg-orange-400/20 rounded-lg rotate-45 animate-pulse-slow"></div>
+            
+            <div className="relative grid grid-cols-1 lg:grid-cols-2 gap-12 p-12 md:p-16">
+              <div className="animate-slide-in-left">
+                <div className="inline-block px-4 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium mb-6 text-white border border-white/30">
+                  Start Your Journey
+                </div>
+                <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight">
+                  Ready to Advance Your Career?
+                </h2>
+                <p className="text-white/90 mb-10 text-lg leading-relaxed">
+                  Get in touch with our training advisors to find the perfect program for your career goals. We offer customized training solutions for individuals and corporate teams.
+                </p>
+                <div className="space-y-6">
+                  {[
+                    { title: 'Personalized Learning Paths', desc: 'Tailored programs based on your experience and goals' },
+                    { title: 'Career Support', desc: 'Job placement assistance and career guidance' },
+                    { title: 'Lifetime Access', desc: 'Ongoing access to course materials and updates' },
+                  ].map((item, index) => (
+                    <div 
+                      key={item.title} 
+                      className="flex items-start gap-4 group animate-slide-in-left hover:translate-x-2 transition-transform duration-300"
+                      style={{ animationDelay: `${(index + 1) * 150}ms` }}
+                    >
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm group-hover:bg-white/30 group-hover:scale-110 transition-all duration-300">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-white text-lg mb-1 group-hover:text-orange-200 transition-colors duration-300">{item.title}</h4>
+                        <p className="text-white/80 text-sm leading-relaxed group-hover:text-white/90 transition-colors duration-300">{item.desc}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-bold text-white text-lg mb-1 group-hover:text-orange-500 transition-colors duration-300">{item.title}</h4>
-                      <p className="text-white/60 text-sm leading-relaxed group-hover:text-white/80 transition-colors duration-300">{item.desc}</p>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-            <div className="bg-gradient-to-br from-black to-orange-950/20 border border-orange-500/30 p-8 rounded-xl backdrop-blur-sm animate-slide-in-right hover:border-orange-500/50 transition-all duration-500 hover:shadow-2xl hover:shadow-orange-500/10">
-              <h3 className="text-2xl font-bold mb-6 text-white">Get More Information</h3>
-              <LeadCaptureForm />
+              <div className="bg-black/40 backdrop-blur-xl border border-white/20 p-8 rounded-2xl animate-slide-in-right">
+                <h3 className="text-2xl font-bold mb-6 text-white">Get More Information</h3>
+                <LeadCaptureForm />
+              </div>
             </div>
           </div>
         </div>
@@ -271,8 +367,13 @@ export default function TrainingPage() {
         }
         
         @keyframes pulse-slow {
-          0%, 100% { opacity: 0.3; }
-          50% { opacity: 0.6; }
+          0%, 100% { opacity: 0.3; transform: scale(1); }
+          50% { opacity: 0.6; transform: scale(1.05); }
+        }
+        
+        @keyframes spin-slow {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
         }
         
         .animate-gradient {
@@ -305,6 +406,10 @@ export default function TrainingPage() {
         
         .animate-pulse-slow {
           animation: pulse-slow 4s ease-in-out infinite;
+        }
+        
+        .animate-spin-slow {
+          animation: spin-slow 20s linear infinite;
         }
         
         .animation-delay-100 {

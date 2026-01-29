@@ -398,6 +398,54 @@ Tests automatically run on:
    - Setup coverage reports
    - Add pre-commit hooks
 
+## Prisma Schema Evolution: Migration Plan
+
+Phase 1 — Dual Mapping
+- Add `Pathway` and `Level` models alongside existing `Course` and keep `courseId` on `Enrollment` for backward compatibility.
+- New writes optionally create `Level` records and populate `levelId` on `Enrollment` when purchases occur.
+
+Phase 2 — Read Shift
+- Update server read paths: dashboards and certificate issuance read from `Level`/`Pathway` first, fallback to `Course` for legacy records.
+- Issue new certificates referencing `Level`/`Pathway` objects.
+
+Phase 3 — Cleanup
+- Backfill missing `levelId` for historical enrollments using a mapping script.
+- Remove legacy `course`-centric indexes and the transitional `courseId` once reads no longer rely on it.
+
+Notes
+- All changes are additive and idempotent; certificates remain immutable and retain original issuance traces.
+- Run `prisma migrate dev` against a staging replica and exercise the read-shift before promoting to production.
+
+## Upgrade Steps (Practical)
+
+1. Create a migration on a staging branch
+
+```bash
+# generate migration SQL (local/dev)
+npx prisma migrate dev --name add-pathway-level-certificates
+```
+
+2. Apply migration to staging DB; run seed and backfill
+
+```bash
+# apply to remote/staging
+npx prisma migrate deploy --schema=prisma/schema.prisma
+node prisma/seed.ts
+# run a backfill script to populate levelId for historical enrollments
+node scripts/backfill-levels.js
+```
+
+3. Flip reads (deploy application changes that prefer `levelId`)
+
+4. After verifying traffic and no regressions, schedule cleanup migration to remove `courseId` (final phase)
+
+```bash
+npx prisma migrate dev --name remove-legacy-courseid
+npx prisma migrate deploy
+```
+
+Always snapshot DB and test the read-shift on a full staging dataset before production.
+
 ## Best Practices Implemented
 
 - ✅ Colocated unit tests near source

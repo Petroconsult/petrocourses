@@ -61,7 +61,7 @@ const CheckCircleIcon = () => (
 );
 
 export default function AboutSection() {
-  const [activeFeature, setActiveFeature] = useState(null);
+  const [activeFeature, setActiveFeature] = useState<number | null>(null);
   const [isVisible, setIsVisible] = useState(false);
 
   React.useEffect(() => {

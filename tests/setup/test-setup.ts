@@ -1,4 +1,4 @@
-import { vi } from 'vitest';
+import { vi, afterEach } from 'vitest';
 
 // Setup global test environment
 

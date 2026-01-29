@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import courses from "@/data/courses.ts";
+import { coursesData } from "@/data/courses";
 
 interface Params {
   params: {
@@ -10,7 +10,7 @@ interface Params {
 export async function GET(_: Request, { params }: Params) {
   const { id } = params;
 
-  const course = courses.find((c) => c.id === id);
+  const course = coursesData.find((c) => c.id === id);
 
   if (!course) {
     return NextResponse.json({ error: "Course not found" }, { status: 404 });
