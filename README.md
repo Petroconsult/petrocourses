@@ -8,176 +8,272 @@ The platform delivers professional **training programs**, **consultancy services
 
 ## Table of Contents
 
-1. Introduction  
-2. Platform Capabilities  
-3. Technology Stack  
-## PetroCourses — INTRODUCTION
+1. [Introduction](#introduction)
+2. [Project Summary](#project-summary)
+3. [Technology Stack](#technology-stack)
+4. [Architecture Overview](#architecture-overview)
+5. [Directory Structure](#directory-structure)
+6. [Getting Started](#getting-started)
+7. [Development Workflow](#development-workflow)
+8. [Testing](#testing)
+9. [Migrations & Helpers](#migrations--helpers)
+10. [License](#license)
+
+---
+
+## Introduction
 
 PetroCourses implements training, enrollment, payments, and certification with a strong separation between content and credentialing authority. The repository is organized for maintainability and auditability.
 
-This README is intentionally focused: what the project contains, how to work with it locally, tests and migration helpers, and a clear map of source folders.
+This README provides:
+- What the project contains
+- How to work with it locally
+- Test and migration helpers
+- A clear map of source folders
 
 ---
 
-## Project summary
+## Project Summary
 
-- Content (training courses, lessons, modules) is modeled by `Course` and related artifacts and lives in the training modules and UI.
-- Certification is modeled via `Pathway`, `Level`, `CertificationPolicy`, and immutable `Certificate` records in Prisma.
-- Enrollment is a first-class lifecycle entity with entitlement and revocation fields.
-- Payment logic lives in `src/modules/payments` and is orchestrated by `src/orchestrators/payment.orchestrator.ts`.
+### Core Components
 
----
-
-## Architecture sanity checklist (current state)
-
-- training: content-only — `Course` and UI components present.
-- enrollment: lifecycle modeled; repo and stubs present.
-- certification: separate models for Pathway/Level/Certificate; immutable certificates.
-- payments: `PaymentService` exists; orchestrator stub implemented (needs gateway integration).
-- identity/corporate: org & seat models present (corporate features marked phased/partial).
-
-Orchestrators: payment → enrollment → certification orchestrators added as deterministic, logged stubs in `src/orchestrators/`.
-
-Policy engine: deterministic evaluator stub at `src/modules/certification/policy.evaluator.ts` — intended to be replaced by a full rules evaluator.
-
-Database: `prisma/schema.prisma` contains Pathway, Level, Enrollment, Certificate and CertificationPolicy models. Certificate is designed to be immutable.
-
-Migration helpers: `scripts/map-legacy-courses.ts` provides a dry-run discovery of legacy `Course` items without `levelId`.
+- **Content Management**: Training courses, lessons, and modules modeled by `Course` and related artifacts
+- **Certification System**: Modeled via `Pathway`, `Level`, `CertificationPolicy`, and immutable `Certificate` records
+- **Enrollment Lifecycle**: First-class entity with entitlement and revocation fields
+- **Payment Processing**: Orchestrated by payment services in `src/modules/payments` and `src/orchestrators/payment.orchestrator.ts`
 
 ---
 
-## Directory map (source-focused)
+## Technology Stack
 
-Top-level important folders and what they contain:
+- **Frontend**: Next.js App Router, React
+- **Backend**: Node.js, TypeScript
+- **Database**: PostgreSQL with Prisma ORM
+- **CMS**: Sanity CMS for content delivery
+- **Payments**: Stripe, UniPay integrations
+- **Testing**: Vitest (unit), Playwright (e2e)
+
+---
+
+## Architecture Overview
+
+### Architecture Sanity Checklist (Current State)
+
+| Domain | Status | Description |
+|--------|--------|-------------|
+| **Training** | ✅ Content-only | `Course` model and UI components present |
+| **Enrollment** | ✅ Lifecycle modeled | Repository and service stubs implemented |
+| **Certification** | ✅ Separate models | Pathway/Level/Certificate with immutable certificates |
+| **Payments** | 🚧 Partial | `PaymentService` exists; orchestrator stub (needs gateway integration) |
+| **Identity/Corporate** | 🚧 Phased | Org & seat models present (corporate features partial) |
+
+### Key Components
+
+**Orchestrators**
+- Payment → Enrollment → Certification orchestrators added as deterministic, logged stubs in `src/orchestrators/`
+
+**Policy Engine**
+- Deterministic evaluator stub at `src/modules/certification/policy.evaluator.ts`
+- Intended to be replaced by a full rules evaluator
+
+**Database**
+- `prisma/schema.prisma` contains all core models
+- `Certificate` model is designed to be immutable
+
+**Migration Helpers**
+- `scripts/map-legacy-courses.ts` provides dry-run discovery of legacy `Course` items without `levelId`
+
+---
+
+## Directory Structure
+
+### High-Level Overview
 
 ```
-prisma/                 # schema.prisma, migrations, seed
-sanity/                 # CMS configuration (content schemas)
+prisma/                 # Database schema, migrations, seed data
+sanity/                 # CMS configuration and content schemas
 src/
-  app/                  # Next.js App Router (UI pages, thin API endpoints)
-  components/           # UI components (presentation only)
-  domains/               # Business authority (training, enrollment, certification)
-  orchestrators/         # Cross-domain workflows (payment -> enrollment -> certification)
-  modules/               # Domain services and business logic (payments, training services)
-  server/                # Server Actions (authenticated mutations)
-  integrations/          # Adapters for external services (Stripe, UniPay, Sanity, HubSpot)
-  lib/                   # Utilities (logger, db helpers)
+  ├── app/              # Next.js App Router (UI pages, API endpoints)
+  ├── components/       # UI components (presentation layer)
+  ├── domains/          # Business authority (core domain logic)
+  ├── orchestrators/    # Cross-domain workflows
+  ├── modules/          # Domain services and business logic
+  ├── server/           # Server Actions (authenticated mutations)
+  ├── integrations/     # External service adapters
+  └── lib/              # Utilities and helpers
 tests/                  # Integration and e2e tests
 scripts/                # Migration and helper scripts
 ```
 
-```
-
-Representative directory structure (developer-friendly view)
+### Detailed Source Structure
 
 ```
-prisma/                 # schema.prisma, migrations, seed
-public/                 # Static assets (images, downloads)
-sanity/                 # CMS configuration (content schemas)
-scripts/                # Migration and helper scripts
+prisma/
+└── schema.prisma                    # Canonical data model
+└── migrations/                      # Database migrations
+└── seed/                            # Seed data scripts
+
+public/                              # Static assets (images, downloads)
+
+sanity/                              # Sanity CMS configuration
+└── schemas/                         # Content type schemas
+
+scripts/
+└── map-legacy-courses.ts            # Migration helper for legacy courses
 
 src/
-  app/                  # Next.js App Router (UI pages, thin API endpoints)
-    (home)/             # Home pages
-      about/
-      contact/
-    advisory/           # Advisory booking and services pages
-      book/
-      services/
-    api/                # API endpoints
-      auth/
-      bookings/
-      chatbot/
-      courses/
-      crm/
-      payments/
-      webhooks/
-    consultancy/        # Consultancy booking and services pages
-      book/
-      services/
-    dashboard/          # Dashboard pages for users
-      bookings/
-      courses/
-      profile/
-    insights/           # Insights pages
-      [slug]/
-    resources/          # Resource pages
-      [slug]/
-    training/           # Training related pages
-      courses/
-      enroll/
-  components/           # UI components (presentation only)
-    tests/
-    chatbot/
-    courses/
-    forms/
-    layout/
-    shared/
-    ui/
-  data/                 # Static or seed data
-  domains/              # Business authority (training, enrollment, certification)
-    certification/
-    corporate/
-    enrollment/
-    identity/
-    payments/
-    training/
-  hooks/                # React hooks
-  integrations/         # Adapters for external services (Stripe, UniPay, Sanity, HubSpot)
-  lib/                  # Utilities (logger, db helpers, security, email)
-    tests/
-    db/
-    email/
-    security/
-    utils/
-  modules/              # Domain services and business logic (payments, training services)
-    advisory/
-    certification/
-    consultancy/
-    payments/
-    training/
-  orchestrators/        # Cross-domain workflows (payment -> enrollment -> certification)
-    tests/
-  server/               # Server Actions (authenticated mutations)
-    tests/
-  types/                # TypeScript types
+├── app/                             # Next.js App Router
+│   ├── (home)/                      # Home pages
+│   │   ├── about/
+│   │   └── contact/
+│   ├── advisory/                    # Advisory services
+│   │   ├── book/
+│   │   └── services/
+│   ├── api/                         # API endpoints
+│   │   ├── auth/
+│   │   ├── bookings/
+│   │   ├── chatbot/
+│   │   ├── courses/
+│   │   ├── crm/
+│   │   ├── payments/
+│   │   └── webhooks/
+│   ├── consultancy/                 # Consultancy services
+│   │   ├── book/
+│   │   └── services/
+│   ├── dashboard/                   # User dashboard
+│   │   ├── bookings/
+│   │   ├── courses/
+│   │   └── profile/
+│   ├── insights/                    # Blog/insights pages
+│   │   └── [slug]/
+│   ├── resources/                   # Resource pages
+│   │   └── [slug]/
+│   └── training/                    # Training pages
+│       ├── courses/
+│       └── enroll/
+│
+├── components/                      # UI components (presentation only)
+│   ├── chatbot/
+│   ├── courses/
+│   ├── forms/
+│   ├── layout/
+│   ├── shared/
+│   ├── ui/
+│   └── tests/
+│
+├── data/                            # Static or seed data
+│
+├── domains/                         # Business authority (core domain logic)
+│   ├── certification/               # Certificate domain models
+│   ├── corporate/                   # Corporate/organization models
+│   ├── enrollment/                  # Enrollment domain logic
+│   ├── identity/                    # User identity models
+│   ├── payments/                    # Payment domain models
+│   └── training/                    # Training domain models
+│
+├── hooks/                           # React hooks
+│
+├── integrations/                    # External service adapters
+│   ├── stripe/                      # Stripe payment integration
+│   ├── unipay/                      # UniPay integration
+│   ├── sanity/                      # Sanity CMS client
+│   └── hubspot/                     # HubSpot CRM integration
+│
+├── lib/                             # Utilities and helpers
+│   ├── db/                          # Database utilities
+│   ├── email/                       # Email service
+│   ├── security/                    # Security utilities
+│   ├── utils/                       # General utilities
+│   ├── logger.ts                    # Structured logger
+│   └── tests/
+│
+├── modules/                         # Domain services (business logic)
+│   ├── advisory/                    # Advisory service logic
+│   ├── certification/               # Certification services
+│   │   └── policy.evaluator.ts     # Policy evaluation engine
+│   ├── consultancy/                 # Consultancy service logic
+│   ├── payments/                    # Payment processing logic
+│   └── training/                    # Training services
+│
+├── orchestrators/                   # Cross-domain workflows
+│   ├── payment.orchestrator.ts      # Payment workflow orchestration
+│   ├── enrollment.orchestrator.ts   # Enrollment workflow
+│   ├── certification.orchestrator.ts # Certification workflow
+│   └── tests/
+│       └── orchestrators.test.ts    # Orchestrator unit tests
+│
+├── server/                          # Server Actions
+│   └── tests/
+│
+└── types/                           # TypeScript type definitions
 
-utils/                  # Generic utilities
+tests/
+├── e2e/                             # End-to-end tests
+├── fixtures/                        # Test fixtures and data
+├── integration/                     # Integration tests
+└── setup/                           # Test setup and configuration
 
-tests/                  # Integration and e2e tests
-  e2e/
-  fixtures/
-  integration/
-  setup/
-
+utils/                               # Generic utilities
 ```
 
-Files of particular interest:
+### Key Files
 
-- `prisma/schema.prisma` — canonical data model
-- `src/orchestrators/*` — orchestrators coordinating flows
-- `src/domains/certification/*` — certificate repo and models
-- `src/modules/payments/*` — payment initiation/processing logic
+| File | Purpose |
+|------|---------|
+| `prisma/schema.prisma` | Canonical data model for the entire platform |
+| `src/orchestrators/*` | Orchestrators coordinating cross-domain flows |
+| `src/domains/certification/*` | Certificate repository and domain models |
+| `src/modules/payments/*` | Payment initiation and processing logic |
+| `src/lib/logger.ts` | Structured logger used throughout the application |
+| `scripts/map-legacy-courses.ts` | Migration helper for legacy course data |
 
 ---
 
-## How to run (developer)
+## Getting Started
 
-Prerequisites
+### Prerequisites
 
-- Node.js 18+ (LTS recommended)
-- npm or pnpm
-- Postgres instance for Prisma (only required for DB ops)
+- **Node.js** 18+ (LTS recommended)
+- **npm** or **pnpm**
+- **PostgreSQL** instance for Prisma
 
-Install dependencies
+### Installation
 
-```bash
-pnpm install
-# or
-npm install
-```
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd petrocourses
+   ```
 
-Start dev server
+2. **Install dependencies**
+   ```bash
+   pnpm install
+   # or
+   npm install
+   ```
+
+3. **Set up environment variables**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your database credentials and API keys
+   ```
+
+4. **Generate Prisma client**
+   ```bash
+   npm run prisma:generate
+   ```
+
+5. **Run database migrations**
+   ```bash
+   npm run prisma:migrate
+   ```
+
+6. **Seed the database (optional)**
+   ```bash
+   npm run prisma:seed
+   ```
+
+### Running the Development Server
 
 ```bash
 pnpm dev
@@ -185,63 +281,117 @@ pnpm dev
 npm run dev
 ```
 
-Run tests
+The application will be available at `http://localhost:3000`
+
+---
+
+## Development Workflow
+
+### Available Scripts
 
 ```bash
-npm test
-# or run unit-only
-npm run test:unit
-```
-
-Prisma client
-
-```bash
-npm run prisma:generate
+npm run dev              # Start development server
+npm run build            # Build for production
+npm run start            # Start production server
+npm run lint             # Run ESLint
+npm run type-check       # Run TypeScript compiler check
+npm run prisma:generate  # Generate Prisma client
+npm run prisma:migrate   # Run database migrations
+npm run prisma:studio    # Open Prisma Studio
 ```
 
 ---
 
-## Migrations & mapping helpers
+## Testing
 
-- Dry-run mapping script: `scripts/map-legacy-courses.ts` — lists `Course` rows with no `levelId` for inspection.
+### Running Tests
 
-Run dry-run (example)
+```bash
+# Run all tests
+npm test
 
+# Run unit tests only
+npm run test:unit
+
+# Run integration tests
+npm run test:integration
+
+# Run e2e tests
+npm run test:e2e
+
+# Run tests in watch mode
+npm run test:watch
+```
+
+### Test Coverage
+
+Key verification areas before any release:
+
+- ✅ Unit tests for policy logic (grant/deny)
+- ✅ Certificate immutability tests
+- ✅ Integration tests for payment webhooks → entitlement granting and rollback
+- ✅ E2E flow: enroll → complete → certificate issuance
+- ✅ Migration smoke test: ensure legacy `Course` → `Level` mapping preserves enrollments and certificates
+
+---
+
+## Migrations & Helpers
+
+### Legacy Course Mapping
+
+The `scripts/map-legacy-courses.ts` script provides a dry-run discovery of legacy `Course` rows with no `levelId`.
+
+**Run dry-run:**
 ```bash
 DATABASE_URL="postgresql://user:pass@localhost:5432/db" node scripts/map-legacy-courses.js
 ```
 
-To apply mappings you should extend the script to create `Level` rows and update `Course.levelId` in a transactional and tested migration on staging first.
+**To apply mappings:**
+1. Extend the script to create `Level` rows
+2. Update `Course.levelId` in a transactional operation
+3. Test the migration on staging first
+4. Review and validate results before applying to production
 
----
-
-## Implementations present
-
-- `src/lib/logger.ts` — simple structured logger used by orchestrators and tests.
-- `src/orchestrators/payment.orchestrator.ts` — orchestrates payment initiation + processing (dev stub).
-- `src/orchestrators/enrollment.orchestrator.ts` — idempotent enrollment creation stub.
-- `src/orchestrators/certification.orchestrator.ts` — policy-based issuance orchestration stub.
-- `src/modules/certification/policy.evaluator.ts` — deterministic policy evaluator stub.
-- `src/orchestrators/__tests__/orchestrators.test.ts` — vitest unit test covering the payment→enroll→cert flow.
-- `scripts/map-legacy-courses.ts` — migration dry-run helper.
-
----
-
-## Tests & verification guidance
-
-Key verification areas before any release:
-
-- Unit tests for policy logic (grant/deny) and certificate immutability.
-- Integration tests for payment webhooks → entitlement granting and rollback.
-- E2E flow: enroll → complete → certificate issuance.
-- Migration smoke test: ensure legacy `Course` → `Level` mapping preserves enrollments and certificates.
-
-Run the full suite with:
+### Database Migrations
 
 ```bash
-npm test
+# Create a new migration
+npx prisma migrate dev --name your_migration_name
+
+# Apply pending migrations
+npx prisma migrate deploy
+
+# Reset database (⚠️ destructive)
+npx prisma migrate reset
 ```
+
+---
+
+## Key Implementations
+
+### Orchestrators
+- `src/orchestrators/payment.orchestrator.ts` — Payment initiation + processing (dev stub)
+- `src/orchestrators/enrollment.orchestrator.ts` — Idempotent enrollment creation
+- `src/orchestrators/certification.orchestrator.ts` — Policy-based certificate issuance
+
+### Services
+- `src/modules/certification/policy.evaluator.ts` — Deterministic policy evaluator
+- `src/lib/logger.ts` — Structured logging utility
+
+### Tests
+- `src/orchestrators/__tests__/orchestrators.test.ts` — Unit tests for payment → enroll → cert flow
+
+---
 
 ## License
 
 See the `LICENSE` file in the repository root.
+
+---
+
+## Support
+
+For questions or issues, please:
+- Open an issue on GitHub
+
+---
