@@ -11,7 +11,7 @@ The platform delivers professional **training programs**, **consultancy services
 1. Introduction  
 2. Platform Capabilities  
 3. Technology Stack  
-## PetroCourses — concise project README
+## PetroCourses — INTRODUCTION
 
 PetroCourses implements training, enrollment, payments, and certification with a strong separation between content and credentialing authority. The repository is organized for maintainability and auditability.
 
@@ -71,47 +71,20 @@ scripts/                # Migration and helper scripts
 Representative directory structure (developer-friendly view)
 
 ```
-eslint.config.mjs
-LICENSE
-next-env.d.ts
-next.config.js
-package.json
-postcss.config.ccss
-postcss.config.mjs
-README.md
-tailwind.config.js
-TEST_IMPLEMENTATION_SUMMARY.md
-TEST_METRICS.md
-TESTING.md
-tsconfig.json
-vitest.config.ts
-prisma/
-  schema.prisma
-  seed.ts
-  migrations/
-public/
-  downloads/
-  images/
-sanity/
-  sanity.config.ts
-  schemas/
-scripts/
-  map-legacy-courses.ts
+prisma/                 # schema.prisma, migrations, seed
+public/                 # Static assets (images, downloads)
+sanity/                 # CMS configuration (content schemas)
+scripts/                # Migration and helper scripts
+
 src/
-  middleware.ts
-  app/
-    globals.css
-    layout.tsx
-    page.tsx
-    (home)/
-      layout.tsx
+  app/                  # Next.js App Router (UI pages, thin API endpoints)
+    (home)/             # Home pages
       about/
       contact/
-    advisory/
-      page.tsx
+    advisory/           # Advisory booking and services pages
       book/
       services/
-    api/
+    api/                # API endpoints
       auth/
       bookings/
       chatbot/
@@ -119,107 +92,64 @@ src/
       crm/
       payments/
       webhooks/
-    consultancy/
-      page.tsx
+    consultancy/        # Consultancy booking and services pages
       book/
       services/
-    dashboard/
-      layout.tsx
+    dashboard/          # Dashboard pages for users
       bookings/
       courses/
       profile/
-    insights/
-      page.tsx
+    insights/           # Insights pages
       [slug]/
-    resources/
+    resources/          # Resource pages
       [slug]/
-    training/
-      layout.tsx
-      page.tsx
+    training/           # Training related pages
       courses/
       enroll/
-  components/
-    __tests__/
-      components.test.tsx
+  components/           # UI components (presentation only)
+    tests/
     chatbot/
     courses/
-      courseCard.tsx
-      courseFilter.tsx
-      courseGrid.tsx
-      coursePagination.tsx
-      filterSidebar.tsx
     forms/
     layout/
     shared/
     ui/
-  data/
-    courses.ts
-  domains/
-    index.ts
+  data/                 # Static or seed data
+  domains/              # Business authority (training, enrollment, certification)
     certification/
     corporate/
     enrollment/
     identity/
     payments/
     training/
-  hooks/
-    useCourses.ts
-  integrations/
-    calendly.ts
-    hubspot.ts
-    paypal.ts
-    razorpay.ts
-    sanity.ts
-    stripe.ts
-    teachable.ts
-    unipay.ts
-  lib/
-    logger.ts
-    __tests__/
+  hooks/                # React hooks
+  integrations/         # Adapters for external services (Stripe, UniPay, Sanity, HubSpot)
+  lib/                  # Utilities (logger, db helpers, security, email)
+    tests/
     db/
     email/
     security/
     utils/
-  modules/
+  modules/              # Domain services and business logic (payments, training services)
     advisory/
     certification/
     consultancy/
     payments/
     training/
-  orchestrators/
-    certification.orchestrator.ts
-    enrollment.orchestrator.ts
-    index.ts
-    payment.orchestrator.ts
-    __tests__/
-  server/
-    auth.actions.ts
-    booking.actions.ts
-    certification.actions.ts
-    course.actions.ts
-    enrollment.actions.ts
-    index.ts
-    payment.actions.ts
-    user.actions.ts
-    __tests__/
-  types/
-    api.ts
-    booking.ts
-    course.ts
-    payment.ts
-    user.ts
-utils/
-  formHelpers.ts
-tests/
+  orchestrators/        # Cross-domain workflows (payment -> enrollment -> certification)
+    tests/
+  server/               # Server Actions (authenticated mutations)
+    tests/
+  types/                # TypeScript types
+
+utils/                  # Generic utilities
+
+tests/                  # Integration and e2e tests
   e2e/
-    user-flows.test.ts
   fixtures/
-    mock-data.ts
   integration/
-    api/
-    integrations/
   setup/
-    test-setup.ts
+
 ```
 
 Files of particular interest:
