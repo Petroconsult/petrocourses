@@ -242,17 +242,6 @@ Run the full suite with:
 npm test
 ```
 
----
-
-## Contributing
-
-1. Branch from `main`.
-2. Make small, focused commits and include tests for business logic.
-3. Run `npm test` and include test coverage where applicable.
-4. Open PRs against `main` with a clear description of behavior change.
-
----
-
 ## License
 
 See the `LICENSE` file in the repository root.
