@@ -37,3 +37,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Complete architecture for the frontend (Meant for Internal Use Only)
+COMPLETE_ARCHITECTURE.md
