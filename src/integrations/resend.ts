@@ -133,7 +133,7 @@ class ResendService {
     email: string,
     resetToken: string
   ): Promise<EmailResponse> {
-    const resetLink = `${process.env.NEXT_PUBLIC_BASE_URL}/auth/reset-password/${resetToken}`;
+    const resetLink = `${process.env.NEXT_PUBLIC_BASE_URL}/reset-password/${resetToken}`;
     return this.send({
       to: { email },
       subject: "Reset Your Password",
@@ -148,7 +148,7 @@ class ResendService {
     email: string,
     verificationToken: string
   ): Promise<EmailResponse> {
-    const verifyLink = `${process.env.NEXT_PUBLIC_BASE_URL}/auth/verify-email/${verificationToken}`;
+    const verifyLink = `${process.env.NEXT_PUBLIC_BASE_URL}/verify-email/${verificationToken}`;
     return this.send({
       to: { email },
       subject: "Verify Your Email Address",

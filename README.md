@@ -122,13 +122,37 @@ scripts/
 └── map-legacy-courses.ts            # Migration helper for legacy courses
 
 src/
-├── app/                             # Next.js App Router
-│   ├── (home)/                      # Home pages
-│   │   ├── about/
-│   │   └── contact/
-│   ├── advisory/                    # Advisory services
-│   │   ├── book/
-│   │   └── services/
+├── app/                             # Next.js App Router with Route Groups
+│   ├── (auth)/                      # 🔐 Authentication - URLs have no /auth/ prefix
+│   │   ├── layout.tsx               # Dark gradient background layout
+│   │   ├── login/page.tsx           # → /login
+│   │   ├── signup/page.tsx          # → /signup
+│   │   ├── forgot-password/page.tsx # → /forgot-password
+│   │   ├── reset-password/page.tsx  # → /reset-password
+│   │   ├── verify-email/page.tsx    # → /verify-email
+│   │   └── oauth-callback/page.tsx  # → /oauth-callback
+│   │
+│   ├── (public)/                    # 📄 All public & authenticated routes
+│   │   ├── layout.tsx               # Standard website layout
+│   │   ├── page.tsx                 # Landing page (/)
+│   │   ├── (home)/
+│   │   │   ├── about/page.tsx       # → /about
+│   │   │   └── contact/page.tsx     # → /contact
+│   │   ├── advisory/page.tsx        # → /advisory
+│   │   ├── consultancy/page.tsx     # → /consultancy
+│   │   ├── training/
+│   │   │   ├── page.tsx             # → /training
+│   │   │   ├── courses/page.tsx     # → /training/courses
+│   │   │   ├── courses/[slug]/page.tsx
+│   │   │   └── enroll/page.tsx
+│   │   ├── dashboard/               # 🔒 Protected - requires auth
+│   │   │   ├── page.tsx, profile/, courses/, bookings/, etc.
+│   │   ├── admin/                   # 🔒 Protected - requires admin role
+│   │   ├── insights/page.tsx        # → /insights
+│   │   ├── resources/[slug]/page.tsx
+│   │   ├── payments/                # Success/failure/pending pages
+│   │   └── errors/
+│   │
 │   ├── api/                         # API endpoints
 │   │   ├── auth/
 │   │   ├── bookings/
@@ -137,20 +161,6 @@ src/
 │   │   ├── crm/
 │   │   ├── payments/
 │   │   └── webhooks/
-│   ├── consultancy/                 # Consultancy services
-│   │   ├── book/
-│   │   └── services/
-│   ├── dashboard/                   # User dashboard
-│   │   ├── bookings/
-│   │   ├── courses/
-│   │   └── profile/
-│   ├── insights/                    # Blog/insights pages
-│   │   └── [slug]/
-│   ├── resources/                   # Resource pages
-│   │   └── [slug]/
-│   └── training/                    # Training pages
-│       ├── courses/
-│       └── enroll/
 │
 ├── components/                      # UI components (presentation only)
 │   ├── chatbot/
@@ -229,6 +239,50 @@ utils/                               # Generic utilities
 
 ---
 
+## Routing Architecture
+
+### Route Groups
+
+The app uses **Next.js Route Groups** (parenthesized folder names) to organize pages without affecting URLs:
+
+#### `(auth)` Route Group
+- **Purpose**: Authentication flows (login, signup, password reset, etc.)
+- **URL Pattern**: `/login`, `/signup`, `/forgot-password`, etc. (**no `/auth/` prefix**)
+- **Layout**: Dark gradient background with animations
+- **Access**: Public (unauthenticated users)
+- **Note**: These routes were recently refactored to remove the `/auth/` prefix from all URLs
+
+####  `(public)` Route Group
+- **Purpose**: All public-facing pages and user/admin dashboards
+- **URL Pattern**: `/`, `/about`, `/training/courses`, `/dashboard`, `/admin`, etc.
+- **Layout**: Standard website header and footer
+- **Access**: Mixed - some public, some protected via middleware
+- **Sub-group**: `(home)` for homepage content (about, contact, etc.)
+
+### Key URL Mappings
+
+| Feature | URL | Protection |
+|---------|-----|-----------|
+| **Authentication** | | |
+| Sign In | `/login` | None |
+| Create Account | `/signup` | None |
+| Forgot Password | `/forgot-password` | None |
+| Reset Password | `/reset-password` | Email token |
+| **Public Content** | | |
+| Home | `/` | None |
+| About/Contact | `/about`, `/contact` | None |
+| Training Hub | `/training`, `/training/courses` | None |
+| Course Detail | `/training/courses/[slug]` | None |
+| **Protected Areas** | | |
+| User Dashboard | `/dashboard` | Auth required |
+| My Courses | `/dashboard/courses` | Auth required |
+| Admin Panel | `/admin` | Admin role required |
+| **Content** | | |
+| Insights/Blog | `/insights`, `/insights/[slug]` | None |
+| Resources | `/resources/[slug]` | None |
+
+---
+
 ## Getting Started
 
 ### Prerequisites
@@ -254,8 +308,8 @@ utils/                               # Generic utilities
 
 3. **Set up environment variables**
    ```bash
-   cp .env.example .env
-   # Edit .env with your database credentials and API keys
+   cp .env.example .env.local
+   # Edit .env.local with your database credentials and API keys
    ```
 
 4. **Generate Prisma client**
@@ -282,6 +336,11 @@ npm run dev
 ```
 
 The application will be available at `http://localhost:3000`
+
+**Test Links:**
+- Login page: [http://localhost:3000/login](http://localhost:3000/login)
+- Training courses: [http://localhost:3000/training/courses](http://localhost:3000/training/courses)
+- Dashboard (requires auth): [http://localhost:3000/dashboard](http://localhost:3000/dashboard)
 
 ---
 

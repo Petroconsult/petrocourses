@@ -23,7 +23,7 @@
 - [ ] Create OAuth 2.0 credentials
 - [ ] Add redirect URI: `http://localhost:3000/api/auth/callback/google`
 - [ ] Set `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET`
-- [ ] Test: Visit `/auth/login`
+- [ ] Test: Visit `/login`
 
 ### 4. Email - Resend
 - [ ] Sign up at [resend.com](https://resend.com)

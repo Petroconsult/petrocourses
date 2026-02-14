@@ -144,7 +144,7 @@ export const OAUTH_CONFIG = {
     linkedin: ['r_basicprofile', 'r_emailaddress'],
     microsoft: ['openid', 'profile', 'email'],
   },
-  REDIRECT_PATH: '/auth/callback',
+  REDIRECT_PATH: '/oauth-callback',
 } as const;
 
 // ============================================

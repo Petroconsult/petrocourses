@@ -260,3 +260,35 @@
 .animation-delay-200 { animation-delay: 200ms; }
 .animation-delay-300 { animation-delay: 300ms; }
 .animation-delay-1000 { animation-delay: 1000ms; }
+/* Auth page animations */
+@keyframes fade-in-down {
+  from { opacity: 0; transform: translateY(-20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.8); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(20px, -20px) scale(1.05); }
+}
+
+.animate-fade-in-down {
+  animation: fade-in-down 0.8s ease-out forwards;
+  opacity: 0;
+}
+
+.scale-in {
+  animation: scale-in 0.5s ease-out forwards;
+}
+
+.fade-in {
+  animation: fade-in-up 0.6s ease-out forwards;
+}
+
+.animate-float-slow {
+  animation: float-slow 12s ease-in-out infinite;
+}

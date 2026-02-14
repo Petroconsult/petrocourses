@@ -45,7 +45,7 @@ AUTH_GOOGLE_SECRET=your-secret
 - [LinkedIn OAuth](https://www.linkedin.com/developers/apps): `AUTH_LINKEDIN_ID`, `AUTH_LINKEDIN_SECRET`
 - [Microsoft OAuth](https://portal.azure.com): `AUTH_MICROSOFT_ID`, `AUTH_MICROSOFT_SECRET`
 
-**Test:** Visit `/auth/login` to see OAuth options
+**Test:** Visit `/login` to see OAuth options
 
 ---
 

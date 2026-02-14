@@ -187,7 +187,7 @@ export default function Header() {
                     </div>
                     <div className="p-2">
                       <Link
-                        href="/auth/signup"
+                        href="/signup"
                         className="block px-4 py-2 text-sm text-white hover:bg-white/5 rounded transition-colors duration-200"
                       >
                         Create Account
