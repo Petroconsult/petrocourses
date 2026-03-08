@@ -25,6 +25,9 @@ model User {
   enrollments   Enrollment[]
   bookings      Booking[]
   leads         Lead[]
+  payments      Payment[]
+  feedback      Feedback[]
+  auditLogs     AuditLog[]
   
   @@index([email])
 }
@@ -83,6 +86,13 @@ enum Category {
   SAFETY
   MANAGEMENT
   TECHNICAL
+}
+
+enum UpstreamSubCategory {
+  EXPLORATION
+  DRILLING
+  PRODUCTION
+  RESERVOIR
 }
 
 // New data models to represent credentialing domain
@@ -357,4 +367,74 @@ model Testimonial {
   
   @@index([approved])
   @@index([featured])
+}
+
+// Payment model for tracking transactions
+model Payment {
+  id              String      @id @default(cuid())
+  userId          String
+  enrollmentId    String?
+  amount          Decimal     @db.Decimal(10, 2)
+  currency        String      @default("USD")
+  status          PaymentStatus @default(PENDING)
+  provider        String      // e.g., 'stripe', 'unipay'
+  transactionId   String?     @unique
+  refundedAt      DateTime?
+  refundAmount    Decimal?    @db.Decimal(10, 2)
+  refundReason    String?
+  metadata        Json?       // provider-specific data
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enrollment      Enrollment? @relation(fields: [enrollmentId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([enrollmentId])
+  @@index([status])
+}
+
+// Feedback model for collecting user feedback
+model Feedback {
+  id              String      @id @default(cuid())
+  userId          String?
+  type            FeedbackType
+  content         String      @db.Text
+  rating          Int?        // 1-5 for satisfaction
+  courseId        String?
+  enrollmentId    String?
+  metadata        Json?       // additional context
+  sentToCRM       Boolean     @default(false)
+  createdAt       DateTime    @default(now())
+
+  user            User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  course          Course?     @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  enrollment      Enrollment? @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  @@index([type])
+  @@index([userId])
+}
+
+enum FeedbackType {
+  COURSE_COMPLETION
+  CHECKOUT_ABANDONMENT
+  EXAM_FAILURE
+  GENERAL
+}
+
+// Audit log for admin actions
+model AuditLog {
+  id              String      @id @default(cuid())
+  userId          String?     // who performed the action
+  action          String      // e.g., 'enrollment_revoked', 'certificate_issued'
+  resourceType    String      // e.g., 'enrollment', 'certificate'
+  resourceId      String      // id of the affected resource
+  details         Json?       // additional details
+  ipAddress       String?
+  userAgent       String?
+  createdAt       DateTime    @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([resourceType, resourceId])
 }

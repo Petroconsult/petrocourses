@@ -6,31 +6,31 @@
 - Students control when they access course content
 - Duration tracked by audio/video playback time
 - Progress = seconds watched / total seconds
-- **Trigger:** Auto-complete when progress = 100%
+- **Trigger:** Auto-complete lesson when progress = 100%
 
-### Rule 2: Strict Lesson Sequence
-- Lessons must be completed in prescribed order
-- No jumping ahead, no skipping sections
-- Enforced by: `canAccessLesson()` function
-- **Error:** "Cannot access. Complete previous lessons in order."
+### Rule 2: Strict Module Sequence
+- Modules must be completed in prescribed order
+- No jumping ahead, no skipping modules
+- Enforced by: `canAccessNextModule()` function
+- **Error:** "Cannot access. Complete current module first."
 
-### Rule 3: Mandatory Quizzes
-- Quizzes required after specific lessons
-- Cannot progress without attempting quiz
-- **Enforced by:** `progressToNextLesson()` checks quiz attempted
-- **Error:** "Quiz must be completed before progressing"
+### Rule 3: Mandatory Module Quizzes
+- Quizzes required within modules
+- Cannot progress to next module without attempting all quizzes
+- **Enforced by:** `canAccessNextModule()` checks all quizzes attempted
+- **Error:** "All module quizzes must be completed before progressing"
 
 ### Rule 4: Self-Assessed, No Retakes
-- Quiz shows solutions but has no pass/fail
+- Module quizzes show solutions but have no pass/fail
 - Each quiz = 1 attempt only
 - System locks quiz after first submission
 - **Error:** "Quiz already attempted. Retakes not allowed."
 
-### Rule 5: Certificate = Audio Completion
-- Certificate issued at 100% audio duration
-- Independent of quiz performance
-- Auto-issued when user reaches end of content
-- **Logic:** `audioCompletedSeconds >= audioTotalSeconds`
+### Rule 5: Final Exam Certification
+- Certificate issued upon passing final exam (85%+)
+- Exam unlocked after completing all modules
+- Maximum 3 attempts with 5-day cooldown between failures
+- **Logic:** Exam score >= 85 && attemptNumber <= 3
 
 ---
 
@@ -43,7 +43,7 @@ import type { Course } from '@/types/course';
 
 const course: Course = await fetchCourse(courseId);
 const enrollment = await enrollUserToCourse(userId, courseId, course);
-// Result: CourseProgress at lesson 0, module 0
+// Result: CourseProgress at module 0, lesson 0
 ```
 
 ### Track Audio Progress
@@ -59,11 +59,11 @@ const updated = await recordAudioProgress(
 );
 
 if (updated.completionPercentage === 100) {
-  // Audio complete - enable quiz or next lesson
+  // Lesson audio complete - can attempt module quiz
 }
 ```
 
-### Submit Quiz (No Retakes)
+### Submit Module Quiz (No Retakes)
 ```typescript
 import { attemptQuiz } from '@/domains/training/course-progression';
 
@@ -71,52 +71,52 @@ try {
   const result = attemptQuiz(
     progressState,
     quizId,
-    lessonId,
+    moduleId,
     { question1: 'answer_a', question2: 'answer_b' }
   );
   // Quiz recorded, solutions shown
 } catch (e) {
-  // "Quiz has already been attempted. Retakes are not allowed."
+  // "Module quiz has already been attempted. Retakes are not allowed."
 }
 ```
 
-### Progress to Next Lesson
+### Check Module Access
 ```typescript
-import { progressToNextLesson } from '@/domains/training/course-progression';
+import { canAccessNextModule } from '@/domains/training/course-progression';
 
-try {
-  const nextProgress = progressToNextLesson(course, currentProgress);
-  // Validates: audio 100%, quiz attempted, sequence ok
-} catch (e) {
-  // "Cannot progress: Audio not fully completed. X seconds remaining."
+const canAccess = canAccessNextModule(course, currentProgress);
+if (canAccess) {
+  // Allow progression to next module
+} else {
+  // "Complete all lessons and quizzes in current module first"
 }
 ```
 
-### Check Certificate Eligibility
+### Submit Final Exam
 ```typescript
-import { checkCertificateEligibility } from '@/domains/certification/certificate-eligibility';
+import { evaluateExamPolicy } from '@/modules/certification/policy.evaluator';
 
-const eligibility = checkCertificateEligibility(
+const result = evaluateExamPolicy({
   userId,
   courseId,
-  progress.audioCompletedSeconds,
-  progress.audioTotalSeconds,
-  progress.completedAt
-);
-
-if (eligibility.isEligible) {
-  // Issue certificate
-}
+  score: 87.5,        // percentage
+  attemptNumber: 1,
+  lastAttemptDate: undefined
+});
+// Returns: 'PASS' | 'FAIL' | 'LOCKED' | 'COOLDOWN'
 ```
 
-### Auto-Issue Certificate
+### Issue Certificate
 ```typescript
-import { checkAndIssueCertificateAuto } from '@/orchestrators/certification.orchestrator';
+import { orchestrateCertification } from '@/orchestrators/certification.orchestrator';
 
-const result = await checkAndIssueCertificateAuto(userId, course, progress);
-if (result.issued) {
-  console.log('Certificate:', result.certificateId);
-}
+const certificate = await orchestrateCertification(
+  userId,
+  course,
+  examScore,      // 87.5
+  attemptNumber   // 1
+);
+// Returns certificate if exam passed, null if failed
 ```
 
 ---
@@ -126,15 +126,18 @@ if (result.issued) {
 ```
 src/
 ├── types/
-│   └── course.ts                    # Quiz, CourseProgress, Certificate types
+│   └── course.ts                    # Module, Exam, CourseProgress, Certificate types
 ├── domains/
 │   ├── training/
-│   │   └── course-progression.ts    # Progression logic, sequence enforce
+│   │   └── course-progression.ts    # Progression logic, module access control
 │   └── certification/
-│       └── certificate-eligibility.ts # Audio-based cert eligibility
+│       └── certificate-eligibility.ts # Exam-based cert eligibility
+├── modules/
+│   └── certification/
+│       └── policy.evaluator.ts      # Exam policy evaluation (85% threshold)
 ├── orchestrators/
 │   ├── enrollment.orchestrator.ts   # Enroll, record access, progress
-│   └── certification.orchestrator.ts # Issue certs (audio-based)
+│   └── certification.orchestrator.ts # Issue certs (exam-based)
 └── lib/
     └── integrations-config.ts       # TRAINING_CONFIG constants
 ```
@@ -146,19 +149,20 @@ src/
 ### Progression Domain
 | Function | Purpose | Input | Output |
 |----------|---------|-------|--------|
+| `canAccessNextModule()` | Check if can progress to next module | Course, Progress | boolean |
 | `progressToNextLesson()` | Advance to next lesson with all checks | Course, Progress | Updated Progress or Error |
 | `canAccessLesson()` | Check if sequence allows access | Course, moduleIdx, lessonIdx, Progress | boolean |
 | `completeLessonByAudioCompletion()` | Mark lesson complete on 100% audio | Progress, duration | Updated Progress |
-| `attemptQuiz()` | Record quiz attempt (prevents retakes) | Progress, quizId, answers | Updated Progress or Error |
+| `attemptQuiz()` | Record module quiz attempt (prevents retakes) | Progress, quizId, answers | Updated Progress or Error |
 | `calculateTotalAudioDuration()` | Sum all audio in course | Course | seconds |
 
 ### Certification Domain
 | Function | Purpose | Input | Output |
 |----------|---------|-------|--------|
-| `checkCertificateEligibility()` | Check 100% audio complete | userId, courseId, audioSecs, totalSecs | Eligibility object |
-| `shouldAutoIssueCertificate()` | Check if should auto-issue | Course, audioSecs, totalSecs, quizzesAttempted | boolean |
-| `areAllQuizzesAttempted()` | Verify mandatory quizzes done | Course, attemptedIds | boolean |
-| `validateQuizProgress()` | Check quiz requirements | quizRequired, quizAttempted | {valid, reason} |
+| `evaluateExamPolicy()` | Evaluate final exam against policies | ExamAttempt | 'PASS' \| 'FAIL' \| 'LOCKED' \| 'COOLDOWN' |
+| `checkCertificateEligibility()` | Check exam passed | userId, courseId, examScore, attemptNumber | Eligibility object |
+| `shouldAutoIssueCertificate()` | Check if should auto-issue | examScore, attemptNumber | boolean |
+| `orchestrateCertification()` | Issue certificate if exam passed | userId, course, examScore, attemptNumber | Certificate or null |
 
 ---
 
@@ -172,28 +176,45 @@ interface CourseProgress {
   currentModuleIndex: number;      // Current position
   currentLessonIndex: number;      // Lesson within module
   completedLessons: string[];      // Lesson IDs done
+  completedModules: string[];      // Module IDs done
   audioCompletedSeconds: number;   // Seconds watched
   audioTotalSeconds: number;       // Total seconds in course
-  quizAttempts: string[];          // Quiz IDs attempted
+  quizAttempts: string[];          // Module quiz IDs attempted
+  examAttempts: ExamAttempt[];     // Final exam attempts
   enrolledAt: Date;
   startedAt?: Date;
-  completedAt?: Date;              // When audio reached 100%
-  completionPercentage: number;    // audioCompleted / audioTotal
+  completedAt?: Date;              // When all modules done
+  completionPercentage: number;    // modulesCompleted / totalModules
 }
 ```
 
-### Quiz Attempt (No Score)
+### Module Quiz Attempt (Self-Assessed)
 ```typescript
 interface QuizAttempt {
   id: string;
   userId: string;
   quizId: string;
-  lessonId: string;
+  moduleId: string;
   courseId: string;
   answers: Record<string, string>;  // Question ID -> Answer
   submittedAt: Date;
   noRetakeAllowed: boolean;         // Always true
   // NOTE: NO score, NO passed field
+}
+```
+
+### Final Exam Attempt (Graded)
+```typescript
+interface ExamAttempt {
+  id: string;
+  userId: string;
+  examId: string;
+  courseId: string;
+  score: number;                   // Percentage (0-100)
+  attemptNumber: number;           // 1, 2, or 3
+  answers: Record<string, string>; // Question ID -> Answer
+  submittedAt: Date;
+  result: 'PASS' | 'FAIL' | 'LOCKED' | 'COOLDOWN';
 }
 ```
 

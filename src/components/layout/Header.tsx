@@ -2,13 +2,13 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-// Import with graceful fallback for @auth/nextjs setup
+// Import auth utilities from our auth module
 let useSession: any = () => ({ data: null, status: 'unauthenticated' });
 let signIn: any = () => {};
 let signOut: any = () => {};
 
 try {
-  const auth = require('next-auth/react');
+  const auth = require('@/modules/auth/auth.client');
   useSession = auth.useSession;
   signIn = auth.signIn;
   signOut = auth.signOut;

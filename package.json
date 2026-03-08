@@ -20,10 +20,9 @@
     "prisma:seed": "node prisma/seed.ts"
   },
   "dependencies": {
-    "@auth/core": "^0.27.0",
-    "@auth/nextjs": "^0.7.0",
-    "@firebase/app": "^10.7.0",
-    "@firebase/messaging": "^10.7.0",
+    "@auth/core": "^0.41.0",
+    "@firebase/app": "latest",
+    "@firebase/messaging": "latest",
     "@prisma/client": "^5.8.0",
     "next": "14.0.0",
     "react": "^18.2.0",

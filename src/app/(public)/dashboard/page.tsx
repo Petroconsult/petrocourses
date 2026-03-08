@@ -3,13 +3,14 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-// Graceful fallback for auth
+// Import auth utilities
 let useSession: any = () => ({ data: null });
 try {
-  const auth = require('next-auth/react');
+  const auth = require('@/modules/auth/auth.client');
   useSession = auth.useSession;
 } catch (e) {
-  // Auth not configured
+  // Auth not configured, use fallback
+  useSession = () => ({ data: null });
 }
 
 export default function DashboardPage() {

@@ -6,54 +6,68 @@ This document summarizes the implementation of PetroCourses' specific course del
 
 ## What Was Implemented
 
-### 1. **New Domain: Course Progression** ✅
+### 1. **Enhanced Domain: Course Progression** ✅
 **File:** `src/domains/training/course-progression.ts` (550+ lines)
 
 Handles all progression logic with strict enforcement:
+- Module-based course structure
 - Audio duration tracking (seconds-based)
 - Lesson completion detection (100% audio required)
 - Sequence enforcement (no jumping ahead)
-- Quiz attempt validation (no retakes)
+- Module quiz attempt validation (no retakes)
 - Course completion percentage calculation
 
 **Key Functions:**
 - `progressToNextLesson()` - Enforces all business rules before advancing
+- `canAccessNextModule()` - Checks module completion requirements
 - `attemptQuiz()` - Records attempt and prevents retakes
 - `canAccessLesson()` - Validates sequence is followed
 - `calculateTotalAudioDuration()` - Computes course duration
 
-### 2. **New Domain: Certificate Eligibility** ✅
+### 2. **New Domain: Exam Policy Evaluation** ✅
+**File:** `src/modules/certification/policy.evaluator.ts` (150+ lines)
+
+Implements exam-based certification policies:
+- 85% passing threshold
+- Maximum 3 attempts
+- 5-day cooldown between failures
+- Exam lockout after 3 attempts
+
+**Key Functions:**
+- `evaluateExamPolicy()` - Evaluates exam results against policies
+- Returns PASS/FAIL/LOCKED/COOLDOWN status
+
+### 3. **Enhanced Domain: Certificate Eligibility** ✅
 **File:** `src/domains/certification/certificate-eligibility.ts` (350+ lines)
 
-Implements audio-based certificate issuance (not score-based):
-- Checks if audio completion = 100%
-- Verifies quizzes attempted (not graded)
-- Auto-issues certificates on completion
+Implements exam-based certificate issuance:
+- Checks if final exam passed (85%+)
+- Verifies attempt limits
+- Auto-issues certificates on exam pass
 - Generates certificate content
 
 **Key Functions:**
-- `checkCertificateEligibility()` - 100% audio = eligible
+- `checkCertificateEligibility()` - Exam pass = eligible
 - `shouldAutoIssueCertificate()` - Trigger auto-issuance
-- `areAllQuizzesAttempted()` - Verify mandatory quizzes
 - `generateCertificateContent()` - Create cert document
 
 ### 3. **Enhanced Orchestrators** ✅
-**Files:** 
+**Files:**
 - `src/orchestrators/enrollment.orchestrator.ts` (180+ new lines)
 - `src/orchestrators/certification.orchestrator.ts` (160+ new lines)
 
 Added curriculum-aware orchestration:
 
 **Enrollment Changes:**
-- `enrollUserToCourse()` - Initialize at lesson 0
+- `enrollUserToCourse()` - Initialize at module 0, lesson 0
 - `recordLessonAccess()` - Validate sequence before access
 - `recordAudioProgress()` - Track playback seconds
 - `progressToNextLessonOrchestrated()` - Execute progression with validations
 
 **Certification Changes:**
-- `orchestrateCertification()` - Issue based on audio completion (removed grading)
-- `checkAndIssueCertificateAuto()` - Auto-trigger on 100% audio
-- `orchestrateCertificationByPathway()` - Legacy compatibility maintained
+- `orchestrateCertification()` - Issue based on exam pass (85%+ threshold)
+- `checkAndIssueCertificateAuto()` - Auto-trigger on exam completion
+- Exam policy evaluation with attempt limits and cooldowns
 
 ### 4. **Enhanced Types** ✅
 **File:** `src/types/course.ts` (110+ new lines)
@@ -91,85 +105,98 @@ const updated = await recordAudioProgress(userId, courseId, progress, 240);
 // Automatically updates completionPercentage
 ```
 
-### Rule 2: Strict Lesson Sequence ✅
-**Enforced By:** `canAccessLesson()` in course progression domain
-- Checks all previous lessons completed
-- Prevents access to skipped lessons
-- Throws error if sequence violated
+### Rule 2: Strict Module Sequence ✅
+**Enforced By:** `canAccessNextModule()` in course progression domain
+- Checks all lessons in current module completed
+- Checks all module quizzes attempted
+- Prevents access to next module if requirements not met
 
 **Code:**
 ```typescript
-const canAccess = canAccessLesson(course, moduleIdx, lessonIdx, progress);
-if (!canAccess) throw Error("Complete previous lessons first");
+const canAccess = canAccessNextModule(course, progress);
+if (!canAccess) throw Error("Complete current module first");
 ```
 
-### Rule 3: Mandatory Quizzes ✅
-**Enforced By:** `progressToNextLesson()` in course progression domain
-- Checks if quiz follows current lesson
-- Prevents progression if quiz not attempted
-- Requires attempt before next lesson
+### Rule 3: Mandatory Module Quizzes ✅
+**Enforced By:** `canAccessNextModule()` in course progression domain
+- Checks if all quizzes in current module attempted
+- Prevents module progression if quizzes not attempted
+- Self-assessed, no scoring
 
 **Code:**
 ```typescript
-const nextProgress = progressToNextLesson(course, progress);
-// Throws error if quiz required but not attempted
+const nextProgress = canAccessNextModule(course, progress);
+// Returns false if module quizzes not attempted
 ```
 
 ### Rule 4: Self-Assessed, No Retakes ✅
 **Enforced By:** `attemptQuiz()` in course progression domain
-- Records single attempt only
+- Records single attempt only per module quiz
 - Subsequent attempts throw error
 - No score stored, solutions shown
 
 **Code:**
 ```typescript
 try {
-  attemptQuiz(progress, quizId, answers);
+  attemptModuleQuiz(progress, quizId, answers);
 } catch (e) {
-  // "Quiz has already been attempted. Retakes are not allowed."
+  // "Module quiz has already been attempted. Retakes are not allowed."
 }
 ```
 
-### Rule 5: Audio-Based Completion Indicator ✅
-**Enforced By:** Progress tracking and certificate eligibility
-- Completion = `audioCompletedSeconds >= audioTotalSeconds`
-- Independent of quiz performance
-- Tracked in real-time
+### Rule 5: Exam-Based Certification ✅
+**Enforced By:** `evaluateExamPolicy()` in certification module
+- Final exam required for certificate
+- 85% passing threshold
+- Maximum 3 attempts with 5-day cooldown
+- Certificate issued only upon exam pass
+
+**Code:**
+```typescript
+const result = evaluateExamPolicy({
+  score: 87.5,
+  attemptNumber: 1
+});
+// Returns 'PASS' | 'FAIL' | 'LOCKED' | 'COOLDOWN'
+```
+
+### Rule 6: Module Completion Tracking ✅
+**Enforced By:** Course progression domain
+- Tracks completed modules and lessons
+- Module completion requires all lessons and quizzes done
+- Progress tracked in real-time
 
 **Code:**
 ```typescript
 const completionPercentage = 
-  (progress.audioCompletedSeconds / progress.audioTotalSeconds) * 100;
-// Complete when 100%
+  (progress.completedModules.length / course.modules.length) * 100;
+// Complete when all modules done
 ```
 
-### Rule 6: Certificate = Audio Completion ✅
-**Enforced By:** `checkCertificateEligibility()` in certification domain
-- Certificate issued only when audio = 100%
-- NOT based on quiz scores
-- Auto-issued at completion
+### Rule 7: Certificate = Exam Pass ✅
+**Enforced By:** `orchestrateCertification()` in certification orchestrator
+- Certificate issued only when exam passed (85%+)
+- NOT based on module quiz performance
+- Auto-issued upon exam completion
 
 **Code:**
 ```typescript
-const eligibility = checkCertificateEligibility(
-  userId, courseId,
-  progress.audioCompletedSeconds,
-  progress.audioTotalSeconds
+const certificate = await orchestrateCertification(
+  userId, course, examScore, attemptNumber
 );
-// isEligible = true only if audioCompletedSeconds >= audioTotalSeconds
+// Returns certificate if exam passed, null if failed
 ```
 
-### Rule 7: Auto-Issue on Section End ✅
-**Enforced By:** `checkAndIssueCertificateAuto()` in certification orchestrator
-- Triggered when final section audio reaches 100%
-- Auto-creates and stores certificate
-- Sends to user
+### Rule 8: Final Exam Access Control ✅
+**Enforced By:** Course progression domain
+- Exam unlocked only after all modules completed
+- Prevents access if modules incomplete
 
 **Code:**
 ```typescript
-const result = await checkAndIssueCertificateAuto(userId, course, progress);
-if (result.issued) {
-  // Certificate created and sent
+const eligible = progress.completedModules.length === course.modules.length;
+if (!eligible) {
+  throw Error("Complete all modules before taking final exam");
 }
 ```
 

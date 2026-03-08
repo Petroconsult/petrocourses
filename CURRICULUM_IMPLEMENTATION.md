@@ -18,8 +18,8 @@ This document describes the implementation of PetroCourses' specific course deli
 - Users cannot jump ahead or skip lessons
 - Enforced at the orchestrator level
 
-### 3. Quizzes: Mandatory but Non-Graded
-- Quizzes are **mandatory** - cannot progress without attempting
+### 3. Module Quizzes: Mandatory but Non-Graded
+- Quizzes within modules are **mandatory** - cannot progress without attempting
 - Quizzes are **self-assessed** - no pass/fail criteria
 - Solutions provided immediately after submission
 - Users view their answers + correct answers + explanations
@@ -28,24 +28,24 @@ This document describes the implementation of PetroCourses' specific course deli
 - Each quiz can only be attempted once
 - After submission, quiz is locked for that user
 - System prevents any retake attempts
-- Important: No "passing grade" required to progress
 
-### 5. Completion Indicator: Audio Duration
-- Certificate issued when audio duration reaches 100%
-- Not based on quiz scores or any other metric
-- Calculated by tracking actual playback time
+### 5. Final Exam: Graded Certification
+- Final exam required to obtain certificate
+- Must achieve 85% or higher to pass
+- Up to 3 attempts allowed
+- 5-day cooldown period between failed attempts
+- Certificate issued only upon passing the final exam
+
+### 6. Completion Indicator: Module Access Control
+- Users must complete all lessons and attempt all quizzes in current module
+- Only then can access the next module
+- Final exam unlocked after completing all modules
+
+### 7. Certificate Issuance: Exam-Based
+- Certificate issued **automatically** upon passing final exam (85%+)
+- NOT dependent on quiz performance in modules
+- Based solely on final exam score
 - Self-paced nature means time-to-completion varies per student
-
-### 6. Certificate Issuance: Audio-Based
-- Certificate issued **automatically** upon reaching end of recorded audio
-- NOT dependent on quiz performance
-- NOT dependent on any grading criteria
-- Based solely on: `audioCompletedSeconds >= audioTotalSeconds`
-
-### 7. Data Point: Reaching End of Section
-- Completion = reaching end of section/recorded audio time
-- System tracks playback progress in real-time
-- Auto-triggers certificate issuance when threshold reached
 
 ## Implementation Architecture
 
@@ -55,8 +55,19 @@ This document describes the implementation of PetroCourses' specific course deli
 ```typescript
 interface Course {
   // ... existing fields
-  audioDurationSeconds?: number;  // Total audio seconds for completion
-  isSequenced?: boolean;          // Default: true, enforces strict order
+  modules: Module[];               // Course divided into modules
+  finalExam?: Exam;                // Final certification exam
+  isSequenced?: boolean;           // Default: true, enforces strict order
+}
+```
+
+#### Module Type
+```typescript
+interface Module {
+  id: string;
+  title: string;
+  lessons: Lesson[];
+  sequenceOrder: number;           // Position in course (0-indexed)
 }
 ```
 
@@ -65,23 +76,39 @@ interface Course {
 interface Lesson {
   // ... existing fields
   durationSeconds?: number;       // For audio progress tracking
-  sequenceOrder: number;          // Position in sequence (0-indexed)
+  sequenceOrder: number;          // Position in module (0-indexed)
   hasFollowingQuiz?: boolean;     // If next lesson is quiz
 }
 ```
 
-#### New QuizAttempt Type
+#### Module Quiz Attempt Type
 ```typescript
 interface QuizAttempt {
   id: string;
   userId: string;
   quizId: string;
   lessonId: string;
+  moduleId: string;
   courseId: string;
   answers: Record<string, string>;  // Question ID -> Answer
   submittedAt: Date;
   noRetakeAllowed: boolean;         // Always true
   // NO score field - self-assessed only
+}
+```
+
+#### Final Exam Attempt Type
+```typescript
+interface ExamAttempt {
+  id: string;
+  userId: string;
+  examId: string;
+  courseId: string;
+  score: number;                   // Percentage (0-100)
+  attemptNumber: number;           // 1, 2, or 3
+  answers: Record<string, string>; // Question ID -> Answer
+  submittedAt: Date;
+  result: 'PASS' | 'FAIL' | 'LOCKED' | 'COOLDOWN';
 }
 ```
 
@@ -93,9 +120,11 @@ interface CourseProgress {
   currentModuleIndex: number;
   currentLessonIndex: number;
   completedLessons: string[];         // Lesson IDs
+  completedModules: string[];         // Module IDs
   audioCompletedSeconds: number;
   audioTotalSeconds: number;
-  quizAttempts: string[];             // Quiz IDs attempted
+  quizAttempts: string[];             // Module quiz IDs attempted
+  examAttempts: ExamAttempt[];        // Final exam attempts
   enrolledAt: Date;
   startedAt?: Date;
   completedAt?: Date;
@@ -113,7 +142,7 @@ interface CertificateInfo {
   instructorName: string;
   completionDate: Date;
   issuedAt: Date;
-  audioCompletionPercentage: number;  // 100% for certificate
+  examScore: number;               // Final exam percentage
   certificateUrl?: string;
 }
 ```
@@ -128,36 +157,52 @@ Handles all progression validation and state management:
 **Key Functions:**
 - `getCurrentLessonProgress()` - Get current lesson state
 - `completeLessonByAudioCompletion()` - Mark lesson complete when audio reaches 100%
-- `attemptQuiz()` - Record quiz attempt (prevents retakes)
+- `attemptQuiz()` - Record module quiz attempt (prevents retakes)
+- `canAccessNextModule()` - Check if user can progress to next module
 - `progressToNextLesson()` - Advance to next with all validations
-- `isCourseComplete()` - Check if entire course finished
-- `getCourseCompletionPercentage()` - Audio % completion
+- `isCourseComplete()` - Check if all modules finished
+- `getCourseCompletionPercentage()` - Module completion percentage
 - `canAccessLesson()` - Enforce sequence rules
 
 **Business Rules Enforced:**
-1. Audio must be 100% complete to progress
-2. Mandatory quizzes must be attempted before progressing
-3. No retakes allowed (first attempt is only attempt)
-4. Strict sequence - only accessible lessons can be accessed
-5. Quiz attempt recorded but not scored
+1. Audio must be 100% complete to progress within module
+2. Mandatory module quizzes must be attempted before progressing to next module
+3. No retakes allowed for module quizzes (first attempt is only attempt)
+4. Strict sequence - modules must be completed in order
+5. Module quiz attempts recorded but not scored (self-assessed)
+
+#### Exam Policy Domain
+**File:** `src/modules/certification/policy.evaluator.ts`
+
+Handles final exam evaluation and certification policies:
+
+**Key Functions:**
+- `evaluateExamPolicy()` - Evaluate final exam attempt (85% threshold, 3 attempts max, 5-day cooldown)
+
+**Business Rules Enforced:**
+1. Final exam requires 85% or higher to pass
+2. Maximum 3 attempts allowed
+3. 5-day cooldown between failed attempts
+4. Exam locked after 3 failed attempts
 
 #### Certificate Eligibility Domain
 **File:** `src/domains/certification/certificate-eligibility.ts`
 
-Handles certificate issuance logic based on audio completion:
+Handles certificate issuance logic based on exam results:
 
 **Key Functions:**
-- `checkCertificateEligibility()` - Verify audio is 100% complete
+- `checkCertificateEligibility()` - Verify exam passed with 85%+
 - `shouldAutoIssueCertificate()` - Check auto-issuance criteria
+- `generateCertificateContent()` - Create certificate data
 - `areAllQuizzesAttempted()` - Verify mandatory quizzes done
 - `validateQuizProgress()` - Ensure quiz requirements met
 - `generateCertificateContent()` - Create certificate data
 
 **Business Rules Enforced:**
-1. Certificate only issued when audio = 100%
-2. Quiz completion required but NOT scored
-3. Auto-issue upon reaching end of audio
-4. Certificate reflects audio completion, not quiz performance
+1. Certificate only issued when final exam passed (85%+)
+2. Module quiz completion required but NOT scored
+3. Auto-issue upon exam pass
+4. Certificate reflects exam performance
 
 ### Orchestrators (`src/orchestrators/`)
 
@@ -165,7 +210,7 @@ Handles certificate issuance logic based on audio completion:
 **File:** `src/orchestrators/enrollment.orchestrator.ts`
 
 New functions:
-- `enrollUserToCourse()` - Initialize progress, start at lesson 1
+- `enrollUserToCourse()` - Initialize progress, start at module 1, lesson 1
 - `recordLessonAccess()` - Validate sequence, grant access
 - `recordAudioProgress()` - Track playback seconds
 - `progressToNextLessonOrchestrated()` - Execute progression with validations
@@ -174,13 +219,12 @@ New functions:
 **File:** `src/orchestrators/certification.orchestrator.ts`
 
 Enhanced functions:
-- `orchestrateCertification()` - Issue certificate based on audio completion
-- `checkAndIssueCertificateAuto()` - Auto-trigger at 100% audio
-- `orchestrateCertificationByPathway()` - Legacy compatibility
+- `orchestrateCertification()` - Issue certificate based on exam pass (85%+)
+- `checkAndIssueCertificateAuto()` - Auto-trigger upon exam completion
 
-**Key Change:** Removed grading/pass-fail logic. Certificate based solely on:
+**Key Change:** Certificate based on final exam performance:
 ```
-audioCompletedSeconds >= audioTotalSeconds
+examScore >= 85 && attemptNumber <= 3
 ```
 
 ## User Flow
@@ -188,48 +232,63 @@ audioCompletedSeconds >= audioTotalSeconds
 ### Enrollment Flow
 ```
 1. User enrolls in course
-2. CourseProgress initialized: 
+2. CourseProgress initialized:
    - currentModuleIndex = 0
    - currentLessonIndex = 0
+   - completedModules = []
    - audioCompletedSeconds = 0
    - audioTotalSeconds = sum of all lesson durations
 3. User directed to Lesson 0 of Module 0
 ```
 
-### Lesson Progression Flow
+### Module Progression Flow
 ```
-1. User accesses lesson
-   ├─ Check: All previous lessons completed?
+1. User accesses module
+   ├─ Check: All previous modules completed?
    ├─ Check: Strict sequence enforced?
    └─ Grant access if yes
 
-2. User watches video/listens to audio
-   ├─ Track playback seconds in real-time
-   ├─ Update audioCompletedSeconds
-   └─ Calculate completionPercentage = audioCompletedSeconds / lessonDuration
+2. Within module - lesson progression:
+   ├─ User completes all lessons in sequence
+   ├─ Track audio completion per lesson
+   └─ Attempt module quiz when required
 
-3. When audioCompletedSeconds >= lessonDuration:
-   ├─ Mark lesson completed
-   └─ Check if quiz follows
+3. Module completion check:
+   ├─ All lessons audio 100% complete?
+   ├─ All module quizzes attempted?
+   └─ Mark module completed if yes
 
-4. If quiz follows:
-   ├─ Show quiz (mandatory)
-   ├─ User submits answers
-   └─ Show solutions + explanations
+4. Progress to next module:
+   ├─ Check: canAccessNextModule()?
+   └─ Unlock next module if yes
+```
 
-5. Progress to next lesson:
-   ├─ Check: Audio 100% complete?
-   ├─ Check: Quiz attempted (if required)?
-   └─ Unlock next lesson if yes
+### Final Exam Flow
+```
+1. User completes all modules
+   
+2. Final exam unlocked:
+   ├─ Check: All modules completed?
+   └─ Allow exam access if yes
+
+3. Exam attempt:
+   ├─ User takes exam (timed or untimed)
+   ├─ Submit answers
+   └─ System grades automatically
+
+4. Exam evaluation:
+   ├─ Score >= 85% → PASS
+   ├─ Score < 85% → FAIL
+   └─ Track attempt number
 ```
 
 ### Certificate Issuance Flow
 ```
-1. User completes final lesson's audio (100%)
-   
+1. Exam result = PASS
+
 2. System triggers auto-issuance:
-   ├─ Calculate: audioCompletedSeconds >= audioTotalSeconds?
-   ├─ Verify: All quizzes attempted?
+   ├─ Evaluate: examScore >= 85?
+   ├─ Check: attemptNumber <= 3?
    └─ Create certificate
 
 3. Certificate issued (async):
@@ -242,28 +301,28 @@ audioCompletedSeconds >= audioTotalSeconds
 4. User can download certificate from dashboard
 ```
 
-## Data Model: Quiz Handling
+## Data Model: Assessment Handling
 
-### Quiz Attempt Logic (No Retakes)
+### Module Quiz Logic (Self-Assessed, No Retakes)
 ```typescript
-// First attempt - success
-const attempt = attemptQuiz(
+// Module quiz attempt - success
+const attempt = attemptModuleQuiz(
   progressState,
   quizId,
-  lessonId,
+  moduleId,
   answers
 )
 // Returns: QuizAttempt { attempted: true, submittedAt: Date }
 
 // Second attempt - error
 try {
-  attemptQuiz(progressState, quizId, lessonId, newAnswers)
+  attemptModuleQuiz(progressState, quizId, moduleId, newAnswers)
 } catch (e) {
-  // "Quiz has already been attempted. Retakes are not allowed."
+  // "Module quiz has already been attempted. Retakes are not allowed."
 }
 ```
 
-### Quiz Display (Self-Assessed)
+### Module Quiz Display (Self-Assessed)
 ```typescript
 // After submission, show:
 {
@@ -278,11 +337,30 @@ try {
 // - Points
 ```
 
+### Final Exam Logic (Graded, Limited Retakes)
+```typescript
+// Exam attempt evaluation
+const result = evaluateExamPolicy({
+  userId,
+  courseId,
+  score: 87.5,        // percentage
+  attemptNumber: 1,
+  lastAttemptDate: undefined
+})
+// Returns: 'PASS' | 'FAIL' | 'LOCKED' | 'COOLDOWN'
+
+// Exam rules:
+// - PASS: score >= 85
+// - FAIL: score < 85, attemptNumber < 3
+// - LOCKED: attemptNumber > 3
+// - COOLDOWN: attemptNumber > 1, days since last attempt < 5
+```
+
 ## API Endpoints Pattern
 
 ### Progress Tracking
 ```
-POST /api/courses/[courseId]/lessons/[lessonId]/progress
+POST /api/courses/[courseId]/modules/[moduleId]/lessons/[lessonId]/progress
 {
   audioPlayedSeconds: 1234,
   isComplete: false
@@ -290,12 +368,12 @@ POST /api/courses/[courseId]/lessons/[lessonId]/progress
 → Updates CourseProgress.audioCompletedSeconds
 
 GET /api/courses/[courseId]/progress
-→ Returns: CourseProgress + currentLessonInfo
+→ Returns: CourseProgress + currentModuleInfo + currentLessonInfo
 ```
 
-### Quiz Submission
+### Module Quiz Submission
 ```
-POST /api/courses/[courseId]/quizzes/[quizId]/submit
+POST /api/courses/[courseId]/modules/[moduleId]/quizzes/[quizId]/submit
 {
   answers: { questionId: "answer" }
 }
@@ -303,21 +381,45 @@ POST /api/courses/[courseId]/quizzes/[quizId]/submit
 → Returns: solutions + explanations
 ```
 
-### Certificate Check
+### Module Access Check
 ```
-GET /api/courses/[courseId]/certificate/eligibility
+GET /api/courses/[courseId]/modules/[moduleId]/access
 → Returns:
 {
-  eligible: true|false,
-  audioCompletion: 95,
-  reason: "95% of audio completed. 5% remaining."
+  canAccess: true|false,
+  reason: "All lessons and quizzes in previous modules must be completed"
 }
 ```
 
-### Auto-Issue Certificate
+### Final Exam Submission
+```
+POST /api/courses/[courseId]/exam/submit
+{
+  answers: { questionId: "answer" },
+  attemptNumber: 1
+}
+→ Grades exam automatically
+→ Returns: { score: 87.5, result: "PASS", attemptNumber: 1 }
+```
+
+### Exam Eligibility Check
+```
+GET /api/courses/[courseId]/exam/eligibility
+→ Returns:
+{
+  eligible: true|false,
+  reason: "All modules must be completed before taking final exam"
+}
+```
+
+### Certificate Auto-Issue
 ```
 POST /api/courses/[courseId]/certificate/auto-issue
-→ Called when audioCompletedSeconds >= audioTotalSeconds
+{
+  examScore: 87.5,
+  attemptNumber: 1
+}
+→ Called when exam result = PASS
 → Creates and returns certificate
 ```
 

@@ -252,6 +252,34 @@ export function progressToNextLesson(
 }
 
 /**
+ * Check if user can access the next module
+ * Rules: modules must be sequential, all lessons in current module completed, quizzes attempted
+ */
+export function canAccessNextModule(
+  course: Course,
+  progressState: CourseProgressState
+): boolean {
+  const currentModuleIndex = progressState.currentModuleIndex;
+  const currentModule = course.modules[currentModuleIndex];
+
+  if (!currentModule) return false;
+
+  // Check if all lessons in current module are completed
+  const allLessonsCompleted = currentModule.lessons.every(lesson =>
+    progressState.completedLessons.includes(lesson.id)
+  );
+
+  // Check if all quizzes in current module are attempted
+  const allQuizzesAttempted = currentModule.lessons
+    .filter(lesson => lesson.type === 'quiz')
+    .every(quizLesson =>
+      progressState.quizAttempts.some(attempt => attempt.lessonId === quizLesson.id)
+    );
+
+  return allLessonsCompleted && allQuizzesAttempted;
+}
+
+/**
  * Check if course is completed
  * Completion = all audio sections accessed and finished
  */

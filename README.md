@@ -46,11 +46,23 @@ This README provides:
 
 ## Technology Stack
 
-- **Frontend**: Next.js App Router, React
+- **Frontend**: Next.js App Router, React, Tailwind CSS
 - **Backend**: Node.js, TypeScript
 - **Database**: PostgreSQL with Prisma ORM
-- **CMS**: Sanity CMS for content delivery
-- **Payments**: Stripe, UniPay integrations
+- **CMS**: Sanity CMS
+- **Payments**: Stripe, PayPal, Razorpay, UniPay
+- **Email**: Resend
+- **SMS**: Twilio
+- **Video**: Mux
+- **AI/LLM**: OpenAI
+- **Storage**: AWS S3
+- **Analytics**: PostHog
+- **Error Tracking**: Sentry
+- **Push Notifications**: Firebase
+- **CRM**: HubSpot
+- **Booking**: Calendly
+- **Learning Management**: Teachable
+- **OAuth**: Multiple providers
 - **Testing**: Vitest (unit), Playwright (e2e)
 
 ---
@@ -64,7 +76,7 @@ This README provides:
 | **Training** | ✅ Content-only | `Course` model and UI components present |
 | **Enrollment** | ✅ Lifecycle modeled | Repository and service stubs implemented |
 | **Certification** | ✅ Separate models | Pathway/Level/Certificate with immutable certificates |
-| **Payments** | 🚧 Partial | `PaymentService` exists; orchestrator stub (needs gateway integration) |
+| **Payments** | ✅ Webhook integration | `PaymentService` with webhook handling, refund logic, and orchestrator |
 | **Identity/Corporate** | 🚧 Phased | Org & seat models present (corporate features partial) |
 
 ### Key Components
@@ -93,150 +105,19 @@ This README provides:
 prisma/                 # Database schema, migrations, seed data
 sanity/                 # CMS configuration and content schemas
 src/
-  ├── app/              # Next.js App Router (UI pages, API endpoints)
+  ├── app/              # Next.js App Router with Route Groups
+  │   ├── (auth)/       # Authentication routes (/login, /signup, etc.)
+  │   ├── (public)/     # Public and protected routes (/, /training, /dashboard)
+  │   └── api/          # API endpoints
   ├── components/       # UI components (presentation layer)
   ├── domains/          # Business authority (core domain logic)
   ├── orchestrators/    # Cross-domain workflows
   ├── modules/          # Domain services and business logic
   ├── server/           # Server Actions (authenticated mutations)
-  ├── integrations/     # External service adapters
+  ├── integrations/     # External service adapters (12+ services)
   └── lib/              # Utilities and helpers
 tests/                  # Integration and e2e tests
 scripts/                # Migration and helper scripts
-```
-
-### Detailed Source Structure
-
-```
-prisma/
-└── schema.prisma                    # Canonical data model
-└── migrations/                      # Database migrations
-└── seed/                            # Seed data scripts
-
-public/                              # Static assets (images, downloads)
-
-sanity/                              # Sanity CMS configuration
-└── schemas/                         # Content type schemas
-
-scripts/
-└── map-legacy-courses.ts            # Migration helper for legacy courses
-
-src/
-├── app/                             # Next.js App Router with Route Groups
-│   ├── (auth)/                      # 🔐 Authentication - URLs have no /auth/ prefix
-│   │   ├── layout.tsx               # Dark gradient background layout
-│   │   ├── login/page.tsx           # → /login
-│   │   ├── signup/page.tsx          # → /signup
-│   │   ├── forgot-password/page.tsx # → /forgot-password
-│   │   ├── reset-password/page.tsx  # → /reset-password
-│   │   ├── verify-email/page.tsx    # → /verify-email
-│   │   └── oauth-callback/page.tsx  # → /oauth-callback
-│   │
-│   ├── (public)/                    # 📄 All public & authenticated routes
-│   │   ├── layout.tsx               # Standard website layout
-│   │   ├── page.tsx                 # Landing page (/)
-│   │   ├── (home)/
-│   │   │   ├── about/page.tsx       # → /about
-│   │   │   └── contact/page.tsx     # → /contact
-│   │   ├── advisory/page.tsx        # → /advisory
-│   │   ├── consultancy/page.tsx     # → /consultancy
-│   │   ├── training/
-│   │   │   ├── page.tsx             # → /training
-│   │   │   ├── courses/page.tsx     # → /training/courses
-│   │   │   ├── courses/[slug]/page.tsx
-│   │   │   └── enroll/page.tsx
-│   │   ├── dashboard/               # 🔒 Protected - requires auth
-│   │   │   ├── page.tsx, profile/, courses/, bookings/, etc.
-│   │   ├── admin/                   # 🔒 Protected - requires admin role
-│   │   ├── insights/page.tsx        # → /insights
-│   │   ├── resources/[slug]/page.tsx
-│   │   ├── payments/                # Success/failure/pending pages
-│   │   └── errors/
-│   │
-│   ├── api/                         # API endpoints
-│   │   ├── auth/
-│   │   ├── bookings/
-│   │   ├── chatbot/
-│   │   ├── courses/
-│   │   ├── crm/
-│   │   ├── payments/
-│   │   └── webhooks/
-│
-├── components/                      # UI components (presentation only)
-│   ├── chatbot/
-│   ├── courses/
-│   ├── forms/
-│   ├── layout/
-│   ├── shared/
-│   ├── ui/
-│   └── tests/
-│
-├── data/                            # Static or seed data
-│
-├── domains/                         # Business authority (core domain logic)
-│   ├── certification/               # Certificate domain models
-│   ├── corporate/                   # Corporate/organization models
-│   ├── enrollment/                  # Enrollment domain logic
-│   ├── identity/                    # User identity models
-│   ├── payments/                    # Payment domain models
-│   └── training/                    # Training domain models
-│
-├── hooks/                           # React hooks
-│
-├── integrations/                    # External service adapters
-│   ├── stripe/                      # Stripe payment integration
-│   ├── unipay/                      # UniPay integration
-│   ├── sanity/                      # Sanity CMS client
-│   └── hubspot/                     # HubSpot CRM integration
-│
-├── lib/                             # Utilities and helpers
-│   ├── db/                          # Database utilities
-│   ├── email/                       # Email service
-│   ├── security/                    # Security utilities
-│   ├── utils/                       # General utilities
-│   ├── logger.ts                    # Structured logger
-│   └── tests/
-│
-├── modules/                         # Domain services (business logic)
-│   ├── advisory/                    # Advisory service logic
-│   ├── certification/               # Certification services
-│   │   └── policy.evaluator.ts     # Policy evaluation engine
-│   ├── consultancy/                 # Consultancy service logic
-│   ├── payments/                    # Payment processing logic
-│   └── training/                    # Training services
-│
-├── orchestrators/                   # Cross-domain workflows
-│   ├── payment.orchestrator.ts      # Payment workflow orchestration
-│   ├── enrollment.orchestrator.ts   # Enrollment workflow
-│   ├── certification.orchestrator.ts # Certification workflow
-│   └── tests/
-│       └── orchestrators.test.ts    # Orchestrator unit tests
-│
-├── server/                          # Server Actions
-│   └── tests/
-│
-└── types/                           # TypeScript type definitions
-
-tests/
-├── e2e/                             # End-to-end tests
-├── fixtures/                        # Test fixtures and data
-├── integration/                     # Integration tests
-└── setup/                           # Test setup and configuration
-
-utils/                               # Generic utilities
-```
-
-### Key Files
-
-| File | Purpose |
-|------|---------|
-| `prisma/schema.prisma` | Canonical data model for the entire platform |
-| `src/orchestrators/*` | Orchestrators coordinating cross-domain flows |
-| `src/domains/certification/*` | Certificate repository and domain models |
-| `src/modules/payments/*` | Payment initiation and processing logic |
-| `src/lib/logger.ts` | Structured logger used throughout the application |
-| `scripts/map-legacy-courses.ts` | Migration helper for legacy course data |
-
 ---
 
 ## Routing Architecture

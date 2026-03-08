@@ -7,6 +7,7 @@ import {
   formatCertificateData,
   generateCertificateContent,
 } from '@/domains/certification/certificate-eligibility'
+import { evaluateExamPolicy } from '@/modules/certification/policy.evaluator'
 import type {
   CourseProgress,
   CertificateInfo,
@@ -15,57 +16,70 @@ import type {
 
 /**
  * Orchestrate Certificate Issuance
- * 
+ *
  * Rules:
- * - Certificate issued when audio completion reaches 100%
- * - NOT based on quiz scores (quizzes are self-assessed)
- * - Auto-issued upon reaching end of audio/section
+ * - Certificate issued when final exam is passed (85% threshold)
+ * - Workflow: exam passed → certification.orchestrator → generate certificate → store PDF → email certificate
+ * - Certificates must be immutable once issued
  */
 export const orchestrateCertification = async (
   userId: string,
   course: Course,
-  courseProgress: CourseProgress
-): Promise<CertificateInfo> => {
+  examScore: number,
+  attemptNumber: number,
+  lastAttemptDate?: Date
+): Promise<CertificateInfo | null> => {
   const courseId = course.id
-  log('certification.orchestrator.start', { userId, courseId })
+  log('certification.orchestrator.start', { userId, courseId, examScore, attemptNumber })
 
   try {
-    // Check eligibility based on AUDIO COMPLETION ONLY
-    const eligibility = checkCertificateEligibility(
+    // Evaluate exam result
+    const examResult = await evaluateExamPolicy({
       userId,
       courseId,
-      courseProgress.audioCompletedSeconds,
-      courseProgress.audioTotalSeconds,
-      courseProgress.completedAt
-    )
-
-    log('certificate.eligibility.checked', {
-      userId,
-      courseId,
-      isEligible: eligibility.isEligible,
-      audioCompletion: `${Math.round(eligibility.audioCompletionPercentage)}%`,
+      score: examScore,
+      attemptNumber,
+      lastAttemptDate
     })
 
-    // If not eligible, return early
-    if (!eligibility.isEligible) {
-      log('certificate.not_eligible', {
-        userId,
-        courseId,
-        reason: eligibility.reason,
-      })
-      throw new Error(eligibility.reason)
+    log('exam.evaluated', { userId, courseId, result: examResult })
+
+    if (examResult !== 'PASS') {
+      log('certificate.not.issued', { userId, courseId, reason: examResult })
+      return null
     }
 
-    // Verify mandatory quizzes were attempted (but not graded)
-    const allQuizzesAttempted = areAllQuizzesAttempted(
-      course,
-      courseProgress.quizAttempts
-    )
+    // Generate certificate
+    const certificateData = formatCertificateData(userId, course)
+    const certificateContent = generateCertificateContent(certificateData)
 
-    if (!allQuizzesAttempted) {
-      log('certificate.quizzes_not_attempted', { userId, courseId })
-      throw new Error('All mandatory quizzes must be attempted before certificate issuance')
-    }
+    // Store PDF (assume integration for PDF generation and storage)
+    // TODO: integrate with PDF service and S3
+
+    // Save certificate record
+    const certificate = await saveCertificate({
+      userId,
+      courseId,
+      issuedAt: new Date(),
+      certificateData,
+      content: certificateContent,
+    })
+
+    log('certificate.issued', { userId, courseId, certificateId: certificate.id })
+
+    // Email certificate
+    // TODO: integrate with email service
+
+    return certificate
+  } catch (err) {
+    error('certification.orchestrator.failed', {
+      userId,
+      courseId,
+      error: err instanceof Error ? err.message : 'Unknown error'
+    })
+    throw err
+  }
+}
 
     // Check if should auto-issue
     const shouldIssue = shouldAutoIssueCertificate(

@@ -34,7 +34,7 @@ await email.sendBookingConfirmation('user@example.com', 'Dr. Smith', '2025-02-15
 import { getMuxService } from '@/integrations';
 
 const video = getMuxService();
-const upload = await video.createUpload({ filename: 'lesson.mp4' });
+const muxUpload = await video.createUpload({ filename: 'lesson.mp4' });
 const videoData = await video.getVideo('video-id');
 const playback = await video.getPlaybackUrl('playback-id');
 const thumbnail = video.getThumbnailUrl('playback-id', { time: 10, width: 320 });
@@ -63,13 +63,13 @@ const summary = await llm.summarizeContent(content);
 import { getS3Service } from '@/integrations';
 
 const s3 = getS3Service();
-const upload = await s3.upload({
+const s3Upload = await s3.upload({
   key: 'courses/course-1/material.pdf',
   contentType: 'application/pdf',
   body: buffer,
   isPublic: false
 });
-const url = s3.generateSignedUrl({ key: 'file.pdf', expiresIn: 3600 });
+const s3Url = s3.generateSignedUrl({ key: 'file.pdf', expiresIn: 3600 });
 await s3.delete('file.pdf');
 const courseRes = await s3.uploadCourseResource(courseId, 'doc.pdf', buffer, 'application/pdf');
 const avatar = await s3.uploadUserAvatar(userId, 'avatar.jpg', buffer);
