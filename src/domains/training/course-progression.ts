@@ -1,25 +1,25 @@
 /**
  * Training Course Domain Logic
- * 
+ *
  * Business Rules:
  * - Courses are self-paced with defined audio duration
- * - Lesson order is strictly enforced (no flexibility)
+ * - Lesson order is strictly enforced
  * - Quizzes are mandatory and follow specific sections
- * - No pass/fail criteria - progress and show solutions (self-assessed)
- * - Quiz retakes: NOT allowed
- * - Certificate issued upon completion of audio duration
+ * - No pass/fail criteria - progress only
+ * - Quiz retakes NOT allowed
+ * - Certificate issued upon completion
  */
 
-import type { Course, CourseModule, Lesson } from '@/types/course';
+import type { Course, Lesson } from "@/types/course";
 
 export interface CourseProgressState {
   userId: string;
   courseId: string;
   currentModuleIndex: number;
   currentLessonIndex: number;
-  completedLessons: string[]; // lesson IDs
-  audioDurationCompleted: number; // seconds
-  totalAudioDuration: number; // seconds
+  completedLessons: string[];
+  audioDurationCompleted: number;
+  totalAudioDuration: number;
   quizAttempts: QuizAttempt[];
   startedAt: Date;
   lastAccessedAt: Date;
@@ -32,15 +32,14 @@ export interface QuizAttempt {
   moduleIndex: number;
   attempted: boolean;
   completedAt?: Date;
-  answers: Record<string, string>; // question ID -> answer
-  // No score stored - self-assessed
+  answers: Record<string, string>;
 }
 
 export interface LessonProgress {
   lessonId: string;
   moduleIndex: number;
   lessonIndex: number;
-  status: 'locked' | 'available' | 'in-progress' | 'completed';
+  status: "locked" | "available" | "in-progress" | "completed";
   audioPlayedSeconds: number;
   audioDurationSeconds: number;
   percentComplete: number;
@@ -49,115 +48,125 @@ export interface LessonProgress {
 }
 
 /**
- * Get the current course progress state
+ * Get current lesson progress
  */
 export function getCurrentLessonProgress(
   course: Course,
   progressState: CourseProgressState
 ): LessonProgress {
-  const currentModule = course.modules[progressState.currentModuleIndex];
-  const currentLesson = currentModule.lessons[progressState.currentLessonIndex];
 
-  // Parse duration to seconds
-  const durationSeconds = parseDurationToSeconds(currentLesson.duration);
+  const module = course.modules[progressState.currentModuleIndex];
+  if (!module) throw new Error("Invalid module index");
+
+  const lesson = module.lessons[progressState.currentLessonIndex];
+  if (!lesson) throw new Error("Invalid lesson index");
+
+  const durationSeconds = parseDurationToSeconds(lesson.duration);
   const audioPlayedSeconds = progressState.audioDurationCompleted;
 
-  // Check if this lesson has a following quiz
-  const nextLesson = currentModule.lessons[progressState.currentLessonIndex + 1];
-  const hasFollowingQuiz = nextLesson?.type === 'quiz';
+  const nextLesson = module.lessons[progressState.currentLessonIndex + 1];
+  const hasFollowingQuiz = nextLesson?.type === "quiz";
 
-  // Check if quiz was attempted
   const quizAttempted = progressState.quizAttempts.some(
-    (q) => q.lessonId === currentLesson.id
+    q => q.lessonId === lesson.id
   );
 
   return {
-    lessonId: currentLesson.id,
+    lessonId: lesson.id,
     moduleIndex: progressState.currentModuleIndex,
     lessonIndex: progressState.currentLessonIndex,
-    status: getProgressStatus(progressState, currentLesson),
+    status: getProgressStatus(
+      course,
+      progressState,
+      progressState.currentModuleIndex,
+      progressState.currentLessonIndex,
+      lesson
+    ),
     audioPlayedSeconds,
     audioDurationSeconds: durationSeconds,
-    percentComplete: (audioPlayedSeconds / durationSeconds) * 100,
+    percentComplete:
+      durationSeconds > 0
+        ? (audioPlayedSeconds / durationSeconds) * 100
+        : 0,
     hasFollowingQuiz,
-    quizAttempted,
+    quizAttempted
   };
 }
 
 /**
- * Determine lesson status based on progression rules
- * - Locked: Not yet available (previous lessons not complete)
- * - Available: Ready to access (all previous lessons complete)
- * - In-progress: Currently being accessed
- * - Completed: Finished
+ * Determine lesson status
  */
 function getProgressStatus(
+  course: Course,
   progressState: CourseProgressState,
-  currentLesson: Lesson
-): LessonProgress['status'] {
-  const isCompleted = progressState.completedLessons.includes(currentLesson.id);
-  if (isCompleted) return 'completed';
+  moduleIndex: number,
+  lessonIndex: number,
+  lesson: Lesson
+): LessonProgress["status"] {
+
+  if (progressState.completedLessons.includes(lesson.id)) {
+    return "completed";
+  }
 
   const isCurrent =
-    currentLesson.id ===
-    progressState.currentModuleIndex &&
-    currentLesson.id ===
-    progressState.currentLessonIndex;
-  if (isCurrent) return 'in-progress';
+    moduleIndex === progressState.currentModuleIndex &&
+    lessonIndex === progressState.currentLessonIndex;
 
-  // Check if all previous lessons are completed
+  if (isCurrent) return "in-progress";
+
   const allPreviousComplete = checkAllPreviousLessonsComplete(
+    course,
+    moduleIndex,
+    lessonIndex,
     progressState
   );
 
-  return allPreviousComplete ? 'available' : 'locked';
+  return allPreviousComplete ? "available" : "locked";
 }
 
 /**
- * Check if all lessons before current position are completed
- * Enforces strict sequential progression
+ * Ensure strict sequential progression
  */
 function checkAllPreviousLessonsComplete(
+  course: Course,
+  moduleIndex: number,
+  lessonIndex: number,
   progressState: CourseProgressState
 ): boolean {
-  // All previous modules must be fully completed
-  for (let i = 0; i < progressState.currentModuleIndex; i++) {
-    // This would need to check all lessons in previous modules
-    // Simplified here - in real impl, check against completed list
-  }
 
-  // All previous lessons in current module must be completed
-  for (let i = 0; i < progressState.currentLessonIndex; i++) {
-    // Check if lesson is in completed list
-  }
+  const previousLessons = course.modules
+    .slice(0, moduleIndex)
+    .flatMap(m => m.lessons)
+    .concat(course.modules[moduleIndex].lessons.slice(0, lessonIndex));
 
-  return true; // Simplified
+  return previousLessons.every(l =>
+    progressState.completedLessons.includes(l.id)
+  );
 }
 
 /**
- * Mark lesson as completed when audio playback reaches 100%
+ * Mark lesson complete
  */
 export function completeLessonByAudioCompletion(
   progressState: CourseProgressState,
+  lessonId: string,
   durationSeconds: number
 ): CourseProgressState {
+
   return {
     ...progressState,
     audioDurationCompleted: durationSeconds,
     completedLessons: [
       ...new Set([
         ...progressState.completedLessons,
-        progressState.currentModuleIndex.toString(),
-      ]),
-    ],
+        lessonId
+      ])
+    ]
   };
 }
 
 /**
- * Attempt a quiz
- * - Only after audio is 100% complete
- * - Mandatory before progressing
- * - No retakes allowed
+ * Attempt quiz
  */
 export function attemptQuiz(
   progressState: CourseProgressState,
@@ -165,17 +174,14 @@ export function attemptQuiz(
   lessonId: string,
   answers: Record<string, string>
 ): CourseProgressState {
-  // Check if already attempted
+
   const alreadyAttempted = progressState.quizAttempts.some(
-    (q) => q.quizId === quizId
+    q => q.quizId === quizId
   );
 
   if (alreadyAttempted) {
-    throw new Error('Quiz has already been attempted. Retakes are not allowed.');
+    throw new Error("Quiz already attempted. Retakes not allowed.");
   }
-
-  // Check if previous lesson (audio) is completed
-  // In real implementation, verify audio is 100% complete
 
   const attempt: QuizAttempt = {
     quizId,
@@ -183,113 +189,82 @@ export function attemptQuiz(
     moduleIndex: progressState.currentModuleIndex,
     attempted: true,
     completedAt: new Date(),
-    answers,
+    answers
   };
 
   return {
     ...progressState,
-    quizAttempts: [...progressState.quizAttempts, attempt],
+    quizAttempts: [...progressState.quizAttempts, attempt]
   };
 }
 
 /**
- * Progress to next lesson
- * - Only if current lesson is completed (audio 100%)
- * - If quiz exists, quiz must be attempted
+ * Move to next lesson
  */
 export function progressToNextLesson(
   course: Course,
   progressState: CourseProgressState
 ): CourseProgressState {
-  const currentModule = course.modules[progressState.currentModuleIndex];
-  const currentLesson = currentModule.lessons[progressState.currentLessonIndex];
 
-  // Rule 1: Audio must be 100% complete
-  const lessonDurationSeconds = parseDurationToSeconds(currentLesson.duration);
-  if (progressState.audioDurationCompleted < lessonDurationSeconds) {
-    throw new Error(
-      `Cannot progress: Audio not fully completed. ${
-        lessonDurationSeconds - progressState.audioDurationCompleted
-      } seconds remaining.`
-    );
+  const module = course.modules[progressState.currentModuleIndex];
+  if (!module) throw new Error("Invalid module");
+
+  const lesson = module.lessons[progressState.currentLessonIndex];
+  if (!lesson) throw new Error("Invalid lesson");
+
+  const duration = parseDurationToSeconds(lesson.duration);
+
+  if (progressState.audioDurationCompleted < duration) {
+    throw new Error("Audio not fully completed.");
   }
 
-  // Rule 2: If quiz follows this lesson, it must be attempted
-  const nextLesson = currentModule.lessons[progressState.currentLessonIndex + 1];
-  if (nextLesson?.type === 'quiz') {
-    const quizAttempted = progressState.quizAttempts.some(
-      (q) => q.lessonId === currentLesson.id
+  const nextLesson = module.lessons[progressState.currentLessonIndex + 1];
+
+  if (nextLesson?.type === "quiz") {
+    const attempted = progressState.quizAttempts.some(
+      q => q.lessonId === lesson.id
     );
-    if (!quizAttempted) {
-      throw new Error('Quiz must be completed before progressing to next lesson.');
+
+    if (!attempted) {
+      throw new Error("Quiz must be completed before progressing.");
     }
   }
 
-  // Check if at end of current module
-  if (progressState.currentLessonIndex < currentModule.lessons.length - 1) {
+  if (progressState.currentLessonIndex < module.lessons.length - 1) {
+
     return {
       ...progressState,
       currentLessonIndex: progressState.currentLessonIndex + 1,
-      audioDurationCompleted: 0,
+      audioDurationCompleted: 0
     };
   }
 
-  // Move to next module
   if (progressState.currentModuleIndex < course.modules.length - 1) {
+
     return {
       ...progressState,
       currentModuleIndex: progressState.currentModuleIndex + 1,
       currentLessonIndex: 0,
-      audioDurationCompleted: 0,
+      audioDurationCompleted: 0
     };
   }
 
-  // Course complete
   return {
     ...progressState,
-    completedAt: new Date(),
+    completedAt: new Date()
   };
 }
 
 /**
- * Check if user can access the next module
- * Rules: modules must be sequential, all lessons in current module completed, quizzes attempted
- */
-export function canAccessNextModule(
-  course: Course,
-  progressState: CourseProgressState
-): boolean {
-  const currentModuleIndex = progressState.currentModuleIndex;
-  const currentModule = course.modules[currentModuleIndex];
-
-  if (!currentModule) return false;
-
-  // Check if all lessons in current module are completed
-  const allLessonsCompleted = currentModule.lessons.every(lesson =>
-    progressState.completedLessons.includes(lesson.id)
-  );
-
-  // Check if all quizzes in current module are attempted
-  const allQuizzesAttempted = currentModule.lessons
-    .filter(lesson => lesson.type === 'quiz')
-    .every(quizLesson =>
-      progressState.quizAttempts.some(attempt => attempt.lessonId === quizLesson.id)
-    );
-
-  return allLessonsCompleted && allQuizzesAttempted;
-}
-
-/**
- * Check if course is completed
- * Completion = all audio sections accessed and finished
+ * Course completion check
  */
 export function isCourseComplete(
   course: Course,
   progressState: CourseProgressState
 ): boolean {
+
   if (!progressState.completedAt) return false;
 
-  // All modules must be completed
   const totalLessons = course.modules.reduce(
     (sum, module) => sum + module.lessons.length,
     0
@@ -299,111 +274,119 @@ export function isCourseComplete(
 }
 
 /**
- * Get course completion percentage
- * Based on audio duration completed vs total audio duration
+ * Course completion %
  */
 export function getCourseCompletionPercentage(
   course: Course,
   progressState: CourseProgressState
 ): number {
+
   const totalSeconds = calculateTotalAudioDuration(course);
+
+  if (totalSeconds === 0) return 0;
+
   return (progressState.audioDurationCompleted / totalSeconds) * 100;
 }
 
 /**
- * Calculate total audio duration for entire course
+ * Total audio duration
  */
 export function calculateTotalAudioDuration(course: Course): number {
+
   return course.modules.reduce((moduleSum, module) => {
+
     const moduleDuration = module.lessons.reduce((lessonSum, lesson) => {
-      if (lesson.type === 'video' || lesson.type === 'reading') {
+
+      if (lesson.type === "video" || lesson.type === "reading") {
         return lessonSum + parseDurationToSeconds(lesson.duration);
       }
+
       return lessonSum;
+
     }, 0);
+
     return moduleSum + moduleDuration;
+
   }, 0);
 }
 
 /**
- * Parse duration string to seconds
- * Supports: "5:30", "1:23:45", "90 seconds", "5 minutes"
+ * Parse duration string
  */
 export function parseDurationToSeconds(duration: string): number {
-  // Handle "MM:SS" or "HH:MM:SS" format
+
   const timeMatch = duration.match(/(\d+):(\d+)(?::(\d+))?/);
+
   if (timeMatch) {
+
     const hours = timeMatch[3] ? parseInt(timeMatch[1]) : 0;
     const minutes = timeMatch[3] ? parseInt(timeMatch[2]) : parseInt(timeMatch[1]);
     const seconds = timeMatch[3] ? parseInt(timeMatch[3]) : parseInt(timeMatch[2]);
+
     return hours * 3600 + minutes * 60 + seconds;
   }
 
-  // Handle "X seconds" format
   const secondsMatch = duration.match(/(\d+)\s*seconds?/);
-  if (secondsMatch) {
-    return parseInt(secondsMatch[1]);
-  }
+  if (secondsMatch) return parseInt(secondsMatch[1]);
 
-  // Handle "X minutes" format
   const minutesMatch = duration.match(/(\d+)\s*minutes?/);
-  if (minutesMatch) {
-    return parseInt(minutesMatch[1]) * 60;
-  }
+  if (minutesMatch) return parseInt(minutesMatch[1]) * 60;
 
   return 0;
 }
 
 /**
- * Get next lesson in sequence
- * Respects strict ordering
+ * Next lesson
  */
 export function getNextLesson(
   course: Course,
-  currentModuleIndex: number,
-  currentLessonIndex: number
+  moduleIndex: number,
+  lessonIndex: number
 ): Lesson | null {
-  const currentModule = course.modules[currentModuleIndex];
-  const nextLessonInModule = currentModule?.lessons[currentLessonIndex + 1];
 
-  if (nextLessonInModule) return nextLessonInModule;
+  const module = course.modules[moduleIndex];
+  if (!module) return null;
 
-  // Try next module
-  const nextModule = course.modules[currentModuleIndex + 1];
+  const nextLesson = module.lessons[lessonIndex + 1];
+  if (nextLesson) return nextLesson;
+
+  const nextModule = course.modules[moduleIndex + 1];
   return nextModule?.lessons[0] || null;
 }
 
 /**
- * Get previous lesson in sequence
+ * Previous lesson
  */
 export function getPreviousLesson(
   course: Course,
-  currentModuleIndex: number,
-  currentLessonIndex: number
+  moduleIndex: number,
+  lessonIndex: number
 ): Lesson | null {
-  if (currentLessonIndex > 0) {
-    const currentModule = course.modules[currentModuleIndex];
-    return currentModule.lessons[currentLessonIndex - 1];
+
+  const module = course.modules[moduleIndex];
+  if (!module) return null;
+
+  if (lessonIndex > 0) {
+    return module.lessons[lessonIndex - 1];
   }
 
-  if (currentModuleIndex > 0) {
-    const previousModule = course.modules[currentModuleIndex - 1];
-    return previousModule.lessons[previousModule.lessons.length - 1];
+  if (moduleIndex > 0) {
+    const previousModule = course.modules[moduleIndex - 1];
+    return previousModule?.lessons[previousModule.lessons.length - 1] || null;
   }
 
   return null;
 }
 
 /**
- * Get all course lessons in sequence
+ * All lessons in sequence
  */
 export function getAllLessonsInSequence(course: Course): Lesson[] {
-  return course.modules.flatMap((module) => module.lessons);
+  return course.modules.flatMap(module => module.lessons);
 }
 
 /**
- * Can user access lesson?
- * Only if it's current or all previous lessons completed
+ * Can user access lesson
  */
 export function canAccessLesson(
   course: Course,
@@ -411,28 +394,15 @@ export function canAccessLesson(
   lessonIndex: number,
   progressState: CourseProgressState
 ): boolean {
-  // User's current position
-  const userModuleIndex = progressState.currentModuleIndex;
-  const userLessonIndex = progressState.currentLessonIndex;
 
-  // Can only access current or already completed lessons
-  const allLessonsBefore = course.modules
+  const previousLessons = course.modules
     .slice(0, moduleIndex)
-    .flatMap((m) => m.lessons);
+    .flatMap(m => m.lessons)
+    .concat(course.modules[moduleIndex].lessons.slice(0, lessonIndex));
 
-  const lessonsInCurrentModuleBefore = course.modules[moduleIndex].lessons.slice(
-    0,
-    lessonIndex
-  );
-
-  const allPreviousLessons = [...allLessonsBefore, ...lessonsInCurrentModuleBefore];
-
-  // All previous must be completed
-  const allPreviousCompleted = allPreviousLessons.every((lesson) =>
+  return previousLessons.every(lesson =>
     progressState.completedLessons.includes(lesson.id)
   );
-
-  return allPreviousCompleted;
 }
 
 export default {
@@ -447,5 +417,5 @@ export default {
   getNextLesson,
   getPreviousLesson,
   getAllLessonsInSequence,
-  canAccessLesson,
+  canAccessLesson
 };
