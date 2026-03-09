@@ -5,15 +5,15 @@ import Link from 'next/link';
 import ResetPasswordForm from '@/components/forms/ResetPasswordForm';
 
 // Icon Components
-const LockIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8">
+const LockOpenIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
     <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    <path d="M7 11V7a5 5 0 0 1 9.9-1"/>
   </svg>
 );
 
 const ShieldIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
   </svg>
 );
@@ -31,6 +31,24 @@ const CheckCircleIcon = () => (
   </svg>
 );
 
+const features = [
+  {
+    icon: <KeyIcon />,
+    title: 'Strong Protection',
+    desc: 'Use a combination of letters, numbers, and symbols',
+  },
+  {
+    icon: <CheckCircleIcon />,
+    title: 'Instant Access',
+    desc: 'Get back into your account immediately after reset',
+  },
+  {
+    icon: <ShieldIcon />,
+    title: 'Secure Process',
+    desc: 'Your password is encrypted end-to-end',
+  },
+];
+
 export default function ResetPasswordPage() {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -39,99 +57,160 @@ export default function ResetPasswordPage() {
   }, []);
 
   return (
-    <div className="bg-black text-white min-h-screen relative">
-      {/* Subtle background pattern */}
-      <div className="absolute inset-0 opacity-[0.03]" style={{
-        backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`,
-        backgroundSize: '40px 40px'
-      }} />
+    <div className="bg-black text-white min-h-screen relative overflow-hidden">
 
-      {/* Main Content */}
-      <div className="relative min-h-screen flex items-center justify-center px-4 py-16">
+      {/* Grid texture */}
+      <div
+        className="absolute inset-0 opacity-[0.04] pointer-events-none"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)',
+          backgroundSize: '60px 60px',
+        }}
+      />
+
+      {/* Vertical centre divider — desktop decorative */}
+      <div className="hidden lg:block absolute top-0 bottom-0 left-1/2 w-px bg-white/[0.06] pointer-events-none" />
+
+      <div className="relative min-h-screen flex items-center justify-center px-6 md:px-12 py-20">
         <div className="w-full max-w-6xl">
-          <div className="grid lg:grid-cols-[1.2fr_1fr] gap-20 items-start">
-            {/* Left Column - Information */}
-            <div className={`transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
-              <div className="mb-16">
-                {/* Icon Badge */}
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-500/10 border border-orange-500/20 rounded-2xl mb-8">
-                  <LockIcon />
-                </div>
-                
-                <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 tracking-tight leading-[1.1]">
-                  Create New<br />Password
-                </h1>
-                <p className="text-zinc-400 text-xl leading-relaxed max-w-lg">
-                  Choose a strong password to secure your account and protect your data.
-                </p>
+          <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-start">
+
+            {/* ── LEFT COLUMN ─────────────────────────────────────────── */}
+            <div className="page-fade" style={{ animationDelay: '0ms' }}>
+
+              {/* Eyebrow */}
+              <div className="flex items-center gap-3 mb-10">
+                <span className="block w-8 h-px bg-orange-500" />
+                <span className="text-orange-500 text-xs font-bold uppercase tracking-[0.25em]">
+                  New Password
+                </span>
               </div>
 
-              {/* Features List - More spacious */}
-              <div className="space-y-8">
-                <div className="flex items-start gap-5 group">
-                  <div className="w-12 h-12 bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center flex-shrink-0 text-orange-500 group-hover:border-orange-500/30 transition-colors duration-300">
-                    <KeyIcon />
-                  </div>
-                  <div className="pt-1">
-                    <h3 className="text-white font-semibold mb-2 text-lg">Strong Protection</h3>
-                    <p className="text-zinc-500 text-sm leading-relaxed">Use a combination of letters, numbers, and symbols</p>
-                  </div>
-                </div>
+              {/* Headline */}
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.02] mb-6">
+                Create New<br />
+                <span className="text-orange-500">Password.</span>
+              </h1>
 
-                <div className="flex items-start gap-5 group">
-                  <div className="w-12 h-12 bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center flex-shrink-0 text-orange-500 group-hover:border-orange-500/30 transition-colors duration-300">
-                    <CheckCircleIcon />
-                  </div>
-                  <div className="pt-1">
-                    <h3 className="text-white font-semibold mb-2 text-lg">Instant Access</h3>
-                    <p className="text-zinc-500 text-sm leading-relaxed">Get back to your account immediately after reset</p>
-                  </div>
-                </div>
+              <p className="text-white/50 text-lg leading-relaxed max-w-sm mb-16">
+                Choose a strong password to secure your account and protect your data.
+              </p>
 
-                <div className="flex items-start gap-5 group">
-                  <div className="w-12 h-12 bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center flex-shrink-0 text-orange-500 group-hover:border-orange-500/30 transition-colors duration-300">
-                    <ShieldIcon />
+              {/* Feature list */}
+              <div className="space-y-7">
+                {features.map((f, i) => (
+                  <div
+                    key={f.title}
+                    className="flex items-start gap-5 group page-fade"
+                    style={{ animationDelay: `${(i + 1) * 100}ms` }}
+                  >
+                    <div className="flex-shrink-0 w-11 h-11 border border-white/8 rounded-xl flex items-center justify-center text-orange-500 bg-white/[0.02] group-hover:border-orange-500/40 group-hover:bg-white/[0.04] transition-all duration-300">
+                      {f.icon}
+                    </div>
+                    <div className="pt-1">
+                      <p className="font-bold text-white text-sm mb-0.5">{f.title}</p>
+                      <p className="text-white/40 text-xs leading-relaxed">{f.desc}</p>
+                    </div>
                   </div>
-                  <div className="pt-1">
-                    <h3 className="text-white font-semibold mb-2 text-lg">Secure Process</h3>
-                    <p className="text-zinc-500 text-sm leading-relaxed">Your password is encrypted end-to-end</p>
-                  </div>
-                </div>
+                ))}
+              </div>
+
+              {/* Back to login — desktop */}
+              <div className="hidden lg:block mt-20 pt-8 border-t border-white/8">
+                <p className="text-white/40 text-sm">
+                  Remember your password?{' '}
+                  <Link
+                    href="/login"
+                    className="text-orange-500 hover:text-orange-400 font-semibold transition-colors duration-200"
+                  >
+                    Sign In →
+                  </Link>
+                </p>
               </div>
             </div>
 
-            {/* Right Column - Form */}
-            <div className={`transition-all duration-1000 delay-200 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'} lg:sticky lg:top-24`}>
-              <div className="bg-zinc-900/50 border border-zinc-800 rounded-3xl p-8 backdrop-blur-sm">
-                <div className="mb-8">
-                  <h2 className="text-2xl font-bold text-white mb-2">Enter New Password</h2>
-                  <p className="text-zinc-400 text-sm">Make sure it's strong and memorable</p>
+            {/* ── RIGHT COLUMN — FORM ──────────────────────────────────── */}
+            <div
+              className="page-fade lg:sticky lg:top-24"
+              style={{ animationDelay: '200ms' }}
+            >
+              {/* Card */}
+              <div className="border border-white/8 rounded-2xl overflow-hidden bg-white/[0.02]">
+
+                {/* Card header */}
+                <div className="px-8 py-6 border-b border-white/8 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-black text-white">Enter New Password</h2>
+                    <p className="text-white/40 text-xs mt-0.5">Make sure it's strong and memorable</p>
+                  </div>
+                  <div className="w-9 h-9 bg-orange-500/10 border border-orange-500/20 rounded-lg flex items-center justify-center text-orange-500">
+                    <LockOpenIcon />
+                  </div>
                 </div>
 
-                <ResetPasswordForm />
+                {/* Form body */}
+                <div className="px-8 py-8">
+                  <ResetPasswordForm />
 
-                <div className="mt-8 pt-8 border-t border-zinc-800">
-                  <p className="text-zinc-500 text-sm text-center">
-                    Remember your password?{' '}
-                    <Link 
-                      href="/login" 
-                      className="text-orange-500 hover:text-orange-400 transition-colors duration-300 font-medium"
-                    >
-                      Sign In
+                  {/* Support link */}
+                  <div className="mt-7 pt-6 border-t border-white/8 text-center">
+                    <p className="text-white/30 text-xs">
+                      Need help?{' '}
+                      <Link
+                        href="/support"
+                        className="text-white/50 hover:text-orange-400 font-medium transition-colors duration-200"
+                      >
+                        Contact Support
+                      </Link>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Card footer */}
+                <div className="px-8 py-5 border-t border-white/8 bg-white/[0.01] flex items-center justify-between gap-4 flex-wrap">
+                  <div className="flex items-center gap-1.5 text-white/25 text-xs">
+                    <ShieldIcon />
+                    <span>256-bit SSL Encryption</span>
+                  </div>
+                  <p className="text-white/25 text-xs">
+                    <Link href="/terms" className="text-white/40 hover:text-orange-400 transition-colors duration-200">
+                      Terms
+                    </Link>{' '}
+                    &amp;{' '}
+                    <Link href="/privacy" className="text-white/40 hover:text-orange-400 transition-colors duration-200">
+                      Privacy
                     </Link>
                   </p>
                 </div>
               </div>
 
-              {/* Trust Badge */}
-              <div className="mt-6 flex items-center justify-center gap-2 text-zinc-600 text-xs">
-                <ShieldIcon />
-                <span>256-bit SSL Encryption</span>
-              </div>
+              {/* Back to login — mobile */}
+              <p className="lg:hidden mt-6 text-center text-white/40 text-sm">
+                Remember your password?{' '}
+                <Link
+                  href="/login"
+                  className="text-orange-500 hover:text-orange-400 font-semibold transition-colors duration-200"
+                >
+                  Sign In →
+                </Link>
+              </p>
             </div>
+
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        .page-fade {
+          opacity: 0;
+          transform: translateY(20px);
+          animation: pageFadeUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        @keyframes pageFadeUp {
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }

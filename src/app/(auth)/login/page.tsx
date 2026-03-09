@@ -5,15 +5,15 @@ import Link from 'next/link';
 import LoginForm from '@/components/forms/LoginForm';
 
 // Icon Components
-const HomeIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8">
-    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-    <polyline points="9 22 9 12 15 12 15 22"/>
+const LockIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
   </svg>
 );
 
 const ShieldIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
   </svg>
 );
@@ -37,7 +37,7 @@ const UsersIcon = () => (
 );
 
 const GoogleIcon = () => (
-  <svg viewBox="0 0 24 24" className="w-5 h-5">
+  <svg viewBox="0 0 24 24" className="w-4 h-4">
     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
     <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
     <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
@@ -46,10 +46,28 @@ const GoogleIcon = () => (
 );
 
 const FacebookIcon = () => (
-  <svg viewBox="0 0 24 24" fill="#1877F2" className="w-5 h-5">
+  <svg viewBox="0 0 24 24" fill="#1877F2" className="w-4 h-4">
     <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
   </svg>
 );
+
+const features = [
+  {
+    icon: <ChartIcon />,
+    title: 'Track Your Progress',
+    desc: 'Monitor your training metrics and achievements',
+  },
+  {
+    icon: <UsersIcon />,
+    title: 'Connect with Community',
+    desc: 'Join thousands of professionals on their journey',
+  },
+  {
+    icon: <ShieldIcon />,
+    title: 'Secure & Private',
+    desc: 'Your data is encrypted and protected',
+  },
+];
 
 export default function LoginPage() {
   const [isVisible, setIsVisible] = useState(false);
@@ -59,132 +77,175 @@ export default function LoginPage() {
   }, []);
 
   return (
-    <div className="bg-black text-white min-h-screen relative">
-      {/* Subtle background pattern */}
-      <div className="absolute inset-0 opacity-[0.03]" style={{
-        backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`,
-        backgroundSize: '40px 40px'
-      }} />
+    <div className="bg-black text-white min-h-screen relative overflow-hidden">
 
-      {/* Main Content */}
-      <div className="relative min-h-screen flex items-center justify-center px-4 py-16">
+      {/* Grid texture */}
+      <div
+        className="absolute inset-0 opacity-[0.04] pointer-events-none"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)',
+          backgroundSize: '60px 60px',
+        }}
+      />
+
+      {/* Vertical centre divider — decorative desktop only */}
+      <div className="hidden lg:block absolute top-0 bottom-0 left-1/2 w-px bg-white/[0.06] pointer-events-none" />
+
+      <div className="relative min-h-screen flex items-center justify-center px-6 md:px-12 py-20">
         <div className="w-full max-w-6xl">
-          <div className="grid lg:grid-cols-[1.2fr_1fr] gap-20 items-start">
-            {/* Left Column - Information */}
-            <div className={`transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
-              <div className="mb-16">
-                {/* Icon Badge */}
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-500/10 border border-orange-500/20 rounded-2xl mb-8">
-                  <HomeIcon />
-                </div>
-                
-                <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 tracking-tight leading-[1.1]">
-                  Welcome<br />Back
-                </h1>
-                <p className="text-zinc-400 text-xl leading-relaxed max-w-lg">
-                  Sign in to access your training dashboard and continue your progress.
-                </p>
+          <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-start">
+
+            {/* ── LEFT COLUMN ─────────────────────────────────────────── */}
+            <div className="page-fade" style={{ animationDelay: '0ms' }}>
+
+              {/* Eyebrow */}
+              <div className="flex items-center gap-3 mb-10">
+                <span className="block w-8 h-px bg-orange-500" />
+                <span className="text-orange-500 text-xs font-bold uppercase tracking-[0.25em]">
+                  Sign In
+                </span>
               </div>
 
-              {/* Features List */}
-              <div className="space-y-8">
-                <div className="flex items-start gap-5 group">
-                  <div className="w-12 h-12 bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center flex-shrink-0 text-orange-500 group-hover:border-orange-500/30 transition-colors duration-300">
-                    <ChartIcon />
-                  </div>
-                  <div className="pt-1">
-                    <h3 className="text-white font-semibold mb-2 text-lg">Track Your Progress</h3>
-                    <p className="text-zinc-500 text-sm leading-relaxed">Monitor your training metrics and achievements</p>
-                  </div>
-                </div>
+              {/* Headline */}
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.02] mb-6">
+                Welcome<br />
+                <span className="text-orange-500">Back.</span>
+              </h1>
 
-                <div className="flex items-start gap-5 group">
-                  <div className="w-12 h-12 bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center flex-shrink-0 text-orange-500 group-hover:border-orange-500/30 transition-colors duration-300">
-                    <UsersIcon />
-                  </div>
-                  <div className="pt-1">
-                    <h3 className="text-white font-semibold mb-2 text-lg">Connect with Community</h3>
-                    <p className="text-zinc-500 text-sm leading-relaxed">Join thousands of athletes on their journey</p>
-                  </div>
-                </div>
+              <p className="text-white/50 text-lg leading-relaxed max-w-sm mb-16">
+                Access your training dashboard and pick up right where you left off.
+              </p>
 
-                <div className="flex items-start gap-5 group">
-                  <div className="w-12 h-12 bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center flex-shrink-0 text-orange-500 group-hover:border-orange-500/30 transition-colors duration-300">
-                    <ShieldIcon />
+              {/* Feature list */}
+              <div className="space-y-7">
+                {features.map((f, i) => (
+                  <div
+                    key={f.title}
+                    className="flex items-start gap-5 group page-fade"
+                    style={{ animationDelay: `${(i + 1) * 100}ms` }}
+                  >
+                    <div className="flex-shrink-0 w-11 h-11 border border-white/8 rounded-xl flex items-center justify-center text-orange-500 bg-white/[0.02] group-hover:border-orange-500/40 group-hover:bg-white/[0.04] transition-all duration-300">
+                      {f.icon}
+                    </div>
+                    <div className="pt-1">
+                      <p className="font-bold text-white text-sm mb-0.5">{f.title}</p>
+                      <p className="text-white/40 text-xs leading-relaxed">{f.desc}</p>
+                    </div>
                   </div>
-                  <div className="pt-1">
-                    <h3 className="text-white font-semibold mb-2 text-lg">Secure & Private</h3>
-                    <p className="text-zinc-500 text-sm leading-relaxed">Your data is encrypted and protected</p>
-                  </div>
-                </div>
+                ))}
+              </div>
+
+              {/* Don't have account — desktop */}
+              <div className="hidden lg:block mt-20 pt-8 border-t border-white/8">
+                <p className="text-white/40 text-sm">
+                  Don't have an account?{' '}
+                  <Link
+                    href="/signup"
+                    className="text-orange-500 hover:text-orange-400 font-semibold transition-colors duration-200"
+                  >
+                    Create Account →
+                  </Link>
+                </p>
               </div>
             </div>
 
-            {/* Right Column - Form */}
-            <div className={`transition-all duration-1000 delay-200 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'} lg:sticky lg:top-24`}>
-              <div className="bg-zinc-900/50 border border-zinc-800 rounded-3xl p-8 backdrop-blur-sm">
-                <div className="mb-8">
-                  <h2 className="text-2xl font-bold text-white mb-2">Sign In</h2>
-                  <p className="text-zinc-400 text-sm">Enter your credentials to continue</p>
-                </div>
+            {/* ── RIGHT COLUMN — FORM ──────────────────────────────────── */}
+            <div
+              className="page-fade lg:sticky lg:top-24"
+              style={{ animationDelay: '200ms' }}
+            >
+              {/* Card */}
+              <div className="border border-white/8 rounded-2xl overflow-hidden bg-white/[0.02]">
 
-                <LoginForm />
-
-                {/* Divider */}
-                <div className="relative my-8">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-zinc-800"></div>
+                {/* Card header */}
+                <div className="px-8 py-6 border-b border-white/8 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-black text-white">Sign In</h2>
+                    <p className="text-white/40 text-xs mt-0.5">Enter your credentials to continue</p>
                   </div>
-                  <div className="relative flex justify-center text-xs">
-                    <span className="px-3 bg-zinc-900 text-zinc-500">Or continue with</span>
+                  <div className="w-9 h-9 bg-orange-500/10 border border-orange-500/20 rounded-lg flex items-center justify-center text-orange-500">
+                    <LockIcon />
                   </div>
                 </div>
 
-                {/* OAuth Buttons */}
-                <div className="grid grid-cols-2 gap-3">
-                  <button className="px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-white text-sm font-medium hover:bg-zinc-800 hover:border-zinc-700 transition-all duration-200 flex items-center justify-center gap-2 group">
-                    <GoogleIcon />
-                    <span>Google</span>
-                  </button>
-                  <button className="px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-white text-sm font-medium hover:bg-zinc-800 hover:border-zinc-700 transition-all duration-200 flex items-center justify-center gap-2 group">
-                    <FacebookIcon />
-                    <span>Facebook</span>
-                  </button>
+                {/* Form body */}
+                <div className="px-8 py-8">
+                  <LoginForm />
+
+                  {/* Divider */}
+                  <div className="relative my-7">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-white/8" />
+                    </div>
+                    <div className="relative flex justify-center">
+                      <span className="px-4 bg-black text-white/30 text-xs uppercase tracking-widest">
+                        or continue with
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* OAuth */}
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { icon: <GoogleIcon />, label: 'Google' },
+                      { icon: <FacebookIcon />, label: 'Facebook' },
+                    ].map((p) => (
+                      <button
+                        key={p.label}
+                        className="flex items-center justify-center gap-2.5 px-4 py-3 border border-white/8 rounded-xl text-white text-sm font-medium bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/20 transition-all duration-200"
+                      >
+                        {p.icon}
+                        <span>{p.label}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-                {/* Sign Up Link */}
-                <div className="mt-8 pt-8 border-t border-zinc-800">
-                  <p className="text-zinc-500 text-sm text-center">
-                    Don't have an account?{' '}
-                    <Link 
-                      href="/signup" 
-                      className="text-orange-500 hover:text-orange-400 transition-colors duration-300 font-medium"
-                    >
-                      Sign Up
+                {/* Card footer */}
+                <div className="px-8 py-5 border-t border-white/8 bg-white/[0.01] flex items-center justify-between gap-4 flex-wrap">
+                  <div className="flex items-center gap-1.5 text-white/25 text-xs">
+                    <ShieldIcon />
+                    <span>256-bit SSL Encryption</span>
+                  </div>
+                  <p className="text-white/25 text-xs">
+                    <Link href="/terms" className="text-white/40 hover:text-orange-400 transition-colors duration-200">
+                      Terms
+                    </Link>{' '}
+                    &amp;{' '}
+                    <Link href="/privacy" className="text-white/40 hover:text-orange-400 transition-colors duration-200">
+                      Privacy
                     </Link>
                   </p>
                 </div>
               </div>
 
-              {/* Trust Badge */}
-              <div className="mt-6 flex items-center justify-center gap-2 text-zinc-600 text-xs">
-                <ShieldIcon />
-                <span>256-bit SSL Encryption</span>
-              </div>
-
-              {/* Footer Links */}
-              <div className="mt-8 text-center text-zinc-600 text-xs space-y-2">
-                <p>By signing in, you agree to our</p>
-                <div className="flex items-center justify-center gap-2">
-                  <Link href="/terms" className="hover:text-orange-400 transition-colors">Terms of Service</Link>
-                  <span>•</span>
-                  <Link href="/privacy" className="hover:text-orange-400 transition-colors">Privacy Policy</Link>
-                </div>
-              </div>
+              {/* Don't have account — mobile */}
+              <p className="lg:hidden mt-6 text-center text-white/40 text-sm">
+                Don't have an account?{' '}
+                <Link
+                  href="/signup"
+                  className="text-orange-500 hover:text-orange-400 font-semibold transition-colors duration-200"
+                >
+                  Create Account →
+                </Link>
+              </p>
             </div>
+
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        .page-fade {
+          opacity: 0;
+          transform: translateY(20px);
+          animation: pageFadeUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        @keyframes pageFadeUp {
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }

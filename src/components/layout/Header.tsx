@@ -2,32 +2,19 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-// Import auth utilities from our auth module
-let useSession: any = () => ({ data: null, status: 'unauthenticated' });
-let signIn: any = () => {};
-let signOut: any = () => {};
-
-try {
-  const auth = require('@/modules/auth/auth.client');
-  useSession = auth.useSession;
-  signIn = auth.signIn;
-  signOut = auth.signOut;
-} catch (e) {
-  // Auth not configured, provide no-ops
-}
-
 import UserMenu from './UserMenu';
 import NotificationBell from './NotificationBell';
-import SearchBar from './SearchBar';
 import { getEnabledOAuthProviders } from '@/integrations';
 import { getPostHogService } from '@/integrations';
+import { NAV_ITEMS } from '@/config/navigation';
+
+import { useSession, signIn, signOut } from 'next-auth/react';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isAuthMenuOpen, setIsAuthMenuOpen] = useState(false);
+  const [isGetStartedOpen, setIsGetStartedOpen] = useState(false);
   const [isHeroVisible, setIsHeroVisible] = useState(true);
-  const [session, setSession] = useState<any>(null);
-  const [status, setStatus] = useState('unauthenticated');
+  const { data: session, status } = useSession();
   const [oauthProviders, setOauthProviders] = useState<any[]>([]);
   const analytics = getPostHogService();
 
@@ -36,29 +23,37 @@ export default function Header() {
     setOauthProviders(providers);
   }, []);
 
-  // Prefer IntersectionObserver on a hero section (id="page-hero").
-  // If present, header will be dark while the hero is visible.
-  // If not present, fallback to a lightweight scroll check.
+  // Hero visibility tracking
   useEffect(() => {
     const hero = typeof document !== 'undefined' ? document.getElementById('page-hero') : null;
 
     if (hero && 'IntersectionObserver' in window) {
       const obs = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => setIsHeroVisible(entry.isIntersecting));
-        },
+        (entries) => entries.forEach((entry) => setIsHeroVisible(entry.isIntersecting)),
         { root: null, threshold: 0.1 }
       );
       obs.observe(hero);
       return () => obs.disconnect();
     }
 
-    // Fallback: treat top-of-page as hero-visible
     const onScroll = () => setIsHeroVisible(window.scrollY < 40);
     window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll(); // Set initial state
+    onScroll();
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  // Close Get Started dropdown when clicking outside
+  useEffect(() => {
+    if (!isGetStartedOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('#get-started-menu')) {
+        setIsGetStartedOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isGetStartedOpen]);
 
   const handleSignIn = async (provider: string) => {
     await analytics.trackSignup(session?.user?.id || 'anonymous', session?.user?.email || '');
@@ -76,9 +71,6 @@ export default function Header() {
     if (signOut) signOut({ callbackUrl: '/' });
   };
 
-  // Header logic:
-  // - Black when at the top (hero visible)
-  // - Semi-transparent with backdrop blur when scrolled past hero
   const headerBg = isHeroVisible
     ? 'bg-black'
     : 'bg-black/80 border-b border-white/10 backdrop-blur-sm';
@@ -100,99 +92,81 @@ export default function Header() {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-1">
-            <Link 
-              href="/" 
-              className="px-5 py-2.5 hover:text-orange-500 transition-colors duration-200 relative group font-medium"
-            >
-              Home
-              <span className="absolute bottom-1 left-5 right-5 h-0.5 bg-orange-500 scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-left"></span>
-            </Link>
-            <Link 
-              href="/training" 
-              className="px-5 py-2.5 hover:text-orange-500 transition-colors duration-200 relative group font-medium"
-            >
-              Training
-              <span className="absolute bottom-1 left-5 right-5 h-0.5 bg-orange-500 scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-left"></span>
-            </Link>
-            <Link 
-              href="/training/courses" 
-              className="px-5 py-2.5 hover:text-orange-500 transition-colors duration-200 relative group font-medium"
-            >
-              Courses
-              <span className="absolute bottom-1 left-5 right-5 h-0.5 bg-orange-500 scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-left"></span>
-            </Link>
-            <Link 
-              href="/advisory" 
-              className="px-5 py-2.5 hover:text-orange-500 transition-colors duration-200 relative group font-medium"
-            >
-              Advisory
-              <span className="absolute bottom-1 left-5 right-5 h-0.5 bg-orange-500 scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-left"></span>
-            </Link>
-            <Link 
-              href="/about" 
-              className="px-5 py-2.5 hover:text-orange-500 transition-colors duration-200 relative group font-medium"
-            >
-              About
-              <span className="absolute bottom-1 left-5 right-5 h-0.5 bg-orange-500 scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-left"></span>
-            </Link>
+          <nav className="hidden lg:flex items-center space-x-2">
+            {NAV_ITEMS.map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                className="relative group px-6 py-3 font-medium tracking-wide text-sm text-white/90 hover:text-orange-500 transition-colors duration-200"
+              >
+                {label}
+                <span className="absolute bottom-1.5 left-6 right-6 h-0.5 bg-orange-500 scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-left rounded-full"></span>
+              </Link>
+            ))}
           </nav>
 
-          {/* Search Bar - Desktop Only */}
-          <div className="hidden md:flex items-center flex-1 max-w-xs mx-4">
-            <SearchBar />
-          </div>
-
-          {/* Right Side - Auth & Notifications */}
+          {/* Right Side */}
           <div className="flex items-center space-x-3 md:space-x-4">
-            {/* Notification Bell - Only show if authenticated */}
-            {status === 'authenticated' && (
-              <NotificationBell />
-            )}
+            {status === 'authenticated' && <NotificationBell />}
 
-            {/* Auth Section */}
-            {status === 'loading' && (
-              <div className="w-8 h-8 rounded-full bg-white/10 animate-pulse" />
-            )}
+            {status === 'loading' && <div className="w-8 h-8 rounded-full bg-white/10 animate-pulse" />}
 
             {status === 'unauthenticated' && (
-              <div className="hidden lg:flex items-center space-x-2">
+              <div id="get-started-menu" className="relative hidden lg:block">
                 <button
-                  onClick={() => setIsAuthMenuOpen(!isAuthMenuOpen)}
-                  className="relative group px-6 py-2.5 text-white hover:text-orange-500 transition-colors duration-200 font-medium"
+                  onClick={() => setIsGetStartedOpen(!isGetStartedOpen)}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-black border border-orange-500 text-white font-medium rounded transition-colors duration-200 hover:bg-orange-500 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+                  aria-expanded={isGetStartedOpen}
+                  aria-haspopup="true"
                 >
-                  Sign In
-                  <span className="absolute bottom-1 left-0 right-0 h-0.5 bg-orange-500 scale-x-0 group-hover:scale-x-100 transition-transform duration-200"></span>
+                  Get Started
+                  <svg
+                    className={`w-4 h-4 transition-transform duration-200 ${isGetStartedOpen ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
                 </button>
 
-                {/* Auth Dropdown Menu */}
-                {isAuthMenuOpen && (
-                  <div className="absolute top-full right-0 mt-2 bg-zinc-900 border border-white/10 rounded-lg shadow-xl overflow-hidden min-w-48">
-                    <div className="p-4 border-b border-white/10">
-                      <p className="text-xs text-white/60 uppercase tracking-widest font-semibold mb-3">Sign in with</p>
-                      <div className="space-y-2">
-                        {oauthProviders.map((provider) => (
-                          <button
-                            key={provider.id}
-                            onClick={() => {
-                              handleSignIn(provider.id);
-                              setIsAuthMenuOpen(false);
-                            }}
-                            className="w-full px-4 py-2 text-sm text-white bg-white/5 hover:bg-orange-500/20 border border-white/10 hover:border-orange-500/30 rounded transition-all duration-200 text-left"
-                          >
-                            {provider.name}
-                          </button>
-                        ))}
+                {isGetStartedOpen && (
+                  <div className="absolute top-full right-0 mt-2 w-48 bg-zinc-900 border border-white/10 rounded-lg shadow-xl overflow-hidden z-50">
+                    {oauthProviders.length > 0 ? (
+                      <div className="p-3 border-b border-white/10">
+                        <p className="text-xs text-white/50 uppercase tracking-widest font-semibold mb-2">Sign In with</p>
+                        <div className="space-y-1.5">
+                          {oauthProviders.map((provider) => (
+                            <button
+                              key={provider.id}
+                              onClick={() => {
+                                handleSignIn(provider.id);
+                                setIsGetStartedOpen(false);
+                              }}
+                              className="w-full px-3 py-2 text-sm text-white bg-white/5 hover:bg-orange-500/20 border border-white/10 hover:border-orange-500/30 rounded transition-all duration-200 text-left"
+                            >
+                              {provider.name}
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                    <div className="p-2">
+                    ) : (
                       <Link
-                        href="/signup"
-                        className="block px-4 py-2 text-sm text-white hover:bg-white/5 rounded transition-colors duration-200"
+                        href="/login"
+                        onClick={() => setIsGetStartedOpen(false)}
+                        className="flex items-center px-4 py-3 text-sm text-white hover:bg-orange-500/10 hover:text-orange-400 transition-colors duration-200"
                       >
-                        Create Account
+                        Sign In
                       </Link>
-                    </div>
+                    )}
+                    <Link
+                      href="/signup"
+                      onClick={() => setIsGetStartedOpen(false)}
+                      className="flex items-center px-4 py-3 text-sm text-white hover:bg-orange-500/10 hover:text-orange-400 transition-colors duration-200"
+                    >
+                      Create Account
+                    </Link>
                   </div>
                 )}
               </div>
@@ -221,48 +195,23 @@ export default function Header() {
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <nav className="lg:hidden py-4 border-t border-transparent">
+          <nav className="lg:hidden py-4 border-t border-white/10">
             <div className="flex flex-col space-y-1">
-              <SearchBar isMobile />
-              
-              <Link 
-                href="/" 
-                className="px-4 py-3 hover:bg-white/5 hover:text-orange-500 transition-all duration-200 rounded font-medium"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Home
-              </Link>
-              <Link 
-                href="/training" 
-                className="px-4 py-3 hover:bg-white/5 hover:text-orange-500 transition-all duration-200 rounded font-medium"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Training
-              </Link>
-              <Link 
-                href="/training/courses" 
-                className="px-4 py-3 hover:bg-white/5 hover:text-orange-500 transition-all duration-200 rounded font-medium"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Courses
-              </Link>
-              <Link 
-                href="/advisory" 
-                className="px-4 py-3 hover:bg-white/5 hover:text-orange-500 transition-all duration-200 rounded font-medium"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Advisory
-              </Link>
-              <Link 
-                href="/about" 
-                className="px-4 py-3 hover:bg-white/5 hover:text-orange-500 transition-all duration-200 rounded font-medium"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                About
-              </Link>
+              {NAV_ITEMS.map(({ href, label }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className="px-4 py-3 hover:bg-white/5 hover:text-orange-500 transition-all duration-200 rounded font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {label}
+                </Link>
+              ))}
 
+              {/* Mobile: Get Started section */}
               {status === 'unauthenticated' && (
                 <div className="border-t border-white/10 mt-4 pt-4 space-y-2">
+                  <p className="px-4 text-xs text-white/50 uppercase tracking-widest font-semibold">Get Started</p>
                   {oauthProviders.map((provider) => (
                     <button
                       key={provider.id}
@@ -270,11 +219,27 @@ export default function Header() {
                         handleSignIn(provider.id);
                         setIsMenuOpen(false);
                       }}
-                      className="w-full px-4 py-2 text-sm text-white bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/20 rounded transition-all duration-200"
+                      className="w-full px-4 py-2.5 text-sm text-white bg-black border border-orange-500 hover:bg-orange-500 rounded transition-all duration-200 text-left font-medium"
                     >
                       Sign in with {provider.name}
                     </button>
                   ))}
+                  {oauthProviders.length === 0 && (
+                    <Link
+                      href="/login"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="block w-full px-4 py-2.5 text-sm text-white bg-black border border-orange-500 hover:bg-orange-500 rounded transition-all duration-200 font-medium"
+                    >
+                      Sign In
+                    </Link>
+                  )}
+                  <Link
+                    href="/signup"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="block px-4 py-3 hover:bg-white/5 hover:text-orange-500 transition-all duration-200 rounded font-medium"
+                  >
+                    Create Account
+                  </Link>
                 </div>
               )}
 

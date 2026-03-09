@@ -47,6 +47,13 @@ await video.deleteVideo('video-id');
 import { getOpenAIService } from '@/integrations';
 
 const llm = getOpenAIService();
+// Example variables for LLM functions
+const question = 'What is machine learning?';
+const context = 'Machine learning is a subset of artificial intelligence...';
+const history = [{ role: 'user' as const, content: 'Tell me about AI' }];
+const lessonContent = 'This lesson covers the basics of neural networks...';
+const content = 'Long text content to summarize...';
+
 const chat = await llm.chat({
   messages: [{ role: 'user', content: 'Hello!' }],
   temperature: 0.7,
@@ -63,6 +70,11 @@ const summary = await llm.summarizeContent(content);
 import { getS3Service } from '@/integrations';
 
 const s3 = getS3Service();
+// Example buffer for file uploads
+const buffer = Buffer.from('sample file content');
+const courseId = 'course-123';
+const userId = 'user-456';
+
 const s3Upload = await s3.upload({
   key: 'courses/course-1/material.pdf',
   contentType: 'application/pdf',
@@ -79,6 +91,7 @@ const cert = await s3.uploadCertificate(userId, courseId, buffer);
 // SMS (Twilio)
 // ============================================
 import { getTwilioService } from '@/integrations';
+import { TwilioService } from '@/integrations/twilio';
 
 const sms = getTwilioService();
 await sms.sendSms({ to: '+1234567890', body: 'Hello!' });
@@ -90,8 +103,8 @@ await sms.sendCourseReminderSms('+1234567890', 'Python 101');
 await sms.sendCertificationSms('+1234567890', 'Python 101');
 
 // Static helpers:
-const formatted = getTwilioService.formatPhoneNumber('1234567890', '+1');
-const valid = getTwilioService.validatePhoneNumber('+12345678901');
+const formatted = TwilioService.formatPhoneNumber('1234567890', '+1');
+const valid = TwilioService.validatePhoneNumber('+12345678901');
 
 // ============================================
 // ANALYTICS (PostHog)

@@ -21,10 +21,12 @@
   },
   "dependencies": {
     "@auth/core": "^0.41.0",
+    "@auth/nextjs": "^0.0.0-380f8d56",
     "@firebase/app": "latest",
     "@firebase/messaging": "latest",
     "@prisma/client": "^5.8.0",
     "next": "14.0.0",
+    "next-auth": "^4.24.13",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "styled-jsx": "^5.1.7"
